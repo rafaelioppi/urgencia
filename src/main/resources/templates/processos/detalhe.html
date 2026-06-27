@@ -23,6 +23,11 @@
                class="btn btn-danger btn-sm">
                 <i class="bi bi-file-earmark-pdf"></i> Relatorio Final (PDF)
             </a>
+            <a th:if="${processo.status.name() == 'INDEFERIDO'}"
+               th:href="@{/processos/{id}/oficio(id=${processo.id})}" target="_blank"
+               class="btn btn-warning btn-sm">
+                <i class="bi bi-file-earmark-text"></i> Oficio de Indeferimento
+            </a>
             <a th:href="@{/processos/{id}/editar(id=${processo.id})}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-pencil"></i> Editar
             </a>

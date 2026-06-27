@@ -6,6 +6,7 @@ import br.gov.saude.sgpur.service.AnexoStorageService;
 import br.gov.saude.sgpur.service.AuditoriaService;
 import br.gov.saude.sgpur.service.EmailTemplateService;
 import br.gov.saude.sgpur.service.FluxoProcessoService;
+import br.gov.saude.sgpur.service.OficioService;
 import br.gov.saude.sgpur.service.ProcessoService;
 import br.gov.saude.sgpur.service.RelatorioService;
 import jakarta.validation.Valid;
@@ -36,6 +37,7 @@ public class ProcessoController {
     private final FluxoProcessoService fluxoService;
     private final EmailTemplateService emailTemplateService;
     private final RelatorioService relatorioService;
+    private final OficioService oficioService;
     private final MembroUrgenciaRenalRepository membroRepository;
     private final AnexoStorageService anexoStorage;
     private final AuditoriaService auditoria;
@@ -44,6 +46,7 @@ public class ProcessoController {
                               FluxoProcessoService fluxoService,
                               EmailTemplateService emailTemplateService,
                               RelatorioService relatorioService,
+                              OficioService oficioService,
                               MembroUrgenciaRenalRepository membroRepository,
                               AnexoStorageService anexoStorage,
                               AuditoriaService auditoria) {
@@ -51,6 +54,7 @@ public class ProcessoController {
         this.fluxoService = fluxoService;
         this.emailTemplateService = emailTemplateService;
         this.relatorioService = relatorioService;
+        this.oficioService = oficioService;
         this.membroRepository = membroRepository;
         this.anexoStorage = anexoStorage;
         this.auditoria = auditoria;
@@ -253,7 +257,22 @@ public class ProcessoController {
             return "redirect:/processos/" + id;
         }
         Processo p = processoService.decidir(id, decisao, motivoIndeferimento);
-        // Gera automaticamente o Relatorio Final e anexa ao processo (substitui o anterior).
+        // Gera automaticamente o Oficio (se indeferido) e o Relatorio Final, anexando-os.
+        if (decisao == StatusProcesso.INDEFERIDO) {
+            try {
+                if (p.getDataEmissaoOficio() == null) {
+                    p.setDataEmissaoOficio(LocalDate.now());
+                    processoService.salvar(p);
+                }
+                anexoStorage.removerPorTipo(id, TipoAnexo.OFICIO_INDEFERIMENTO);
+                byte[] of = oficioService.gerar(p);
+                String nomeOf = "oficio-indeferimento-" + p.getNumero().replace("/", "-") + ".pdf";
+                anexoStorage.salvarBytes(p, TipoAnexo.OFICIO_INDEFERIMENTO,
+                    "Oficio de indeferimento gerado na decisao", nomeOf, "application/pdf", of);
+            } catch (IOException e) {
+                ra.addFlashAttribute("erro", "Decisao salva, mas falhou ao anexar o oficio: " + e.getMessage());
+            }
+        }
         if (decisao.isFinalizado()) {
             try {
                 anexoStorage.removerPorTipo(id, TipoAnexo.RELATORIO_FINAL);
@@ -328,6 +347,17 @@ public class ProcessoController {
         auditoria.registrar("ANEXO_REMOVIDO", "Processo id " + processoId);
         ra.addFlashAttribute("msg", "Anexo removido.");
         return "redirect:/processos/" + processoId + "#anexos";
+    }
+
+    @GetMapping("/{id}/oficio")
+    public ResponseEntity<byte[]> oficio(@PathVariable Long id) {
+        Processo p = processoService.buscar(id);
+        byte[] pdf = oficioService.gerar(p);
+        String nome = "oficio-indeferimento-" + p.getNumero().replace("/", "-") + ".pdf";
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + nome + "\"")
+            .body(pdf);
     }
 
     @GetMapping("/anexos/{anexoId}/download")
