@@ -1,0 +1,74 @@
+package br.gov.saude.sgpur.service;
+
+import br.gov.saude.sgpur.domain.*;
+import br.gov.saude.sgpur.repository.MembroUrgenciaRenalRepository;
+import br.gov.saude.sgpur.repository.ProcessoRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@ExtendWith(MockitoExtension.class)
+class FluxoProcessoServiceTest {
+
+    @Mock
+    ProcessoRepository processoRepository;
+    @Mock
+    MembroUrgenciaRenalRepository membroRepository;
+
+    private FluxoProcessoService fluxo() {
+        ProcessoService ps = new ProcessoService(processoRepository, membroRepository);
+        return new FluxoProcessoService(ps);
+    }
+
+    private Processo processoComTresPareceres() {
+        Processo p = new Processo();
+        for (int i = 0; i < 3; i++) {
+            p.addParecer(new Parecer(new MembroUrgenciaRenal("INST" + i, "Medico " + i, null)));
+        }
+        return p;
+    }
+
+    @Test
+    void recebimentoEhAtualQuandoNadaFeito() {
+        List<EtapaFluxo> etapas = fluxo().montarEtapas(processoComTresPareceres());
+        assertThat(etapas).isNotEmpty();
+        assertThat(etapas.get(0).titulo()).contains("Recebimento");
+        assertThat(etapas.get(0).estado()).isEqualTo(EtapaFluxo.Estado.ATUAL);
+    }
+
+    @Test
+    void envioConcluiQuandoTodosPareceresTemDataEnvio() {
+        Processo p = processoComTresPareceres();
+        p.getPareceres().forEach(par -> par.setDataEnvio(LocalDate.now()));
+        EtapaFluxo envio = fluxo().montarEtapas(p).stream()
+            .filter(e -> e.titulo().startsWith("Envio")).findFirst().orElseThrow();
+        assertThat(envio.estado()).isEqualTo(EtapaFluxo.Estado.CONCLUIDA);
+    }
+
+    @Test
+    void incluiEtapaDeOficioApenasQuandoIndeferido() {
+        Processo p = processoComTresPareceres();
+        p.setStatus(StatusProcesso.INDEFERIDO);
+        boolean temOficio = fluxo().montarEtapas(p).stream()
+            .anyMatch(e -> e.titulo().toLowerCase().contains("oficio"));
+        assertThat(temOficio).isTrue();
+
+        Processo p2 = processoComTresPareceres();
+        p2.setStatus(StatusProcesso.DEFERIDO);
+        boolean temOficio2 = fluxo().montarEtapas(p2).stream()
+            .anyMatch(e -> e.titulo().toLowerCase().contains("oficio"));
+        assertThat(temOficio2).isFalse();
+    }
+
+    @Test
+    void resumoPendenciaApontaEtapaAtual() {
+        String resumo = fluxo().resumoPendencia(processoComTresPareceres());
+        assertThat(resumo).contains("Recebimento");
+    }
+}
