@@ -92,9 +92,13 @@ public class ProcessoController {
     public String novo(Model model) {
         Processo p = new Processo();
         p.setDataSituacaoEspecial(LocalDate.now());
-        model.addAttribute("processo", p);
         int ano = Year.now().getValue();
-        model.addAttribute("numeracaoAutomatica", processoService.isNumeracaoAutomatica(ano));
+        boolean automatica = processoService.isNumeracaoAutomatica(ano);
+        if (!automatica) {
+            p.setNumero(processoService.proximoNumero(ano)); // sugestao editavel
+        }
+        model.addAttribute("processo", p);
+        model.addAttribute("numeracaoAutomatica", automatica);
         model.addAttribute("medicos", membroRepository.findByAtivoTrueOrderByInstituicaoAsc());
         model.addAttribute("totalAvaliadores", ProcessoService.AVALIADORES_POR_PROCESSO);
         return "processos/form";
@@ -109,12 +113,17 @@ public class ProcessoController {
             ? processo.getDataSituacaoEspecial().getYear() : Year.now().getValue();
         boolean automatica = processoService.isNumeracaoAutomatica(ano);
 
-        // Numero so e obrigatorio quando a numeracao for manual
-        if (!automatica && (processo.getNumero() == null || processo.getNumero().isBlank())) {
-            result.rejectValue("numero", "obrigatorio", "Informe o numero do processo (NN/AAAA).");
-        } else if (!automatica && processoService.numeroJaExiste(processo.getNumero())) {
-            result.rejectValue("numero", "duplicado",
-                "Ja existe um processo com o numero " + processo.getNumero() + ".");
+        // Numero so e obrigatorio/validado quando a numeracao for manual
+        if (!automatica) {
+            String numero = processo.getNumero();
+            if (numero == null || numero.isBlank()) {
+                result.rejectValue("numero", "obrigatorio", "Informe o numero do processo (NN/AAAA).");
+            } else if (!numero.matches("\\d{1,3}/\\d{4}")) {
+                result.rejectValue("numero", "formato", "Use o formato NN/AAAA (ex.: 01/2026).");
+            } else if (processoService.numeroJaExiste(numero)) {
+                result.rejectValue("numero", "duplicado",
+                    "Ja existe um processo com o numero " + numero + ".");
+            }
         }
         if (medicoIds == null || medicoIds.size() != ProcessoService.AVALIADORES_POR_PROCESSO) {
             result.reject("medicos", "Selecione exatamente "
