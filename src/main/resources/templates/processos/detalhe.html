@@ -110,12 +110,21 @@
                 <div class="card-body">
                     <form th:action="@{/processos/{id}/pareceres(id=${processo.id})}" method="post">
                         <table class="table align-middle">
-                            <thead><tr><th>Medico</th><th style="width: 220px">Parecer</th><th>Resposta</th></tr></thead>
+                            <thead><tr>
+                                <th>Medico</th>
+                                <th style="width: 160px">Enviado em</th>
+                                <th style="width: 200px">Parecer</th>
+                                <th>Resposta</th>
+                            </tr></thead>
                             <tbody>
                             <tr th:each="par : ${processo.pareceres}">
                                 <td th:text="${par.membro.rotulo}">Medico</td>
                                 <td>
                                     <input type="hidden" name="parecerId" th:value="${par.id}">
+                                    <input type="date" name="dataEnvio" class="form-control form-control-sm data-envio"
+                                           th:value="${par.dataEnvio}">
+                                </td>
+                                <td>
                                     <select name="resultado" class="form-select form-select-sm">
                                         <option value="">-- pendente --</option>
                                         <option th:each="r : ${resultadoValores}"
@@ -129,7 +138,10 @@
                             </tr>
                             </tbody>
                         </table>
-                        <div class="text-end">
+                        <div class="d-flex justify-content-between">
+                            <button type="button" id="btnEnvioHoje" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-calendar-check"></i> Marcar envio de hoje em todos
+                            </button>
                             <button class="btn btn-primary btn-sm">Salvar pareceres</button>
                         </div>
                     </form>
@@ -293,6 +305,17 @@
     }
     sel.addEventListener('change', toggleMotivo);
     toggleMotivo();
+
+    // Preenche a data de hoje nos campos de envio vazios
+    var btnEnvio = document.getElementById('btnEnvioHoje');
+    if (btnEnvio) {
+        btnEnvio.addEventListener('click', function () {
+            var hoje = new Date().toISOString().slice(0, 10);
+            document.querySelectorAll('.data-envio').forEach(function (inp) {
+                if (!inp.value) inp.value = hoje;
+            });
+        });
+    }
 
     // Copiar textos de e-mail
     document.querySelectorAll('.btn-copiar').forEach(function (btn) {

@@ -33,16 +33,18 @@ public class FluxoProcessoService {
                         : "Anexe o e-mail/documento da solicitacao recebida."));
         anterioresConcluidas = anterioresConcluidas && recebimento;
 
-        // 2. Envio aos 3 medicos
+        // 2. Envio aos 3 medicos (data de envio registrada em todos os pareceres)
         int totalMedicos = p.getPareceres().size();
+        long enviadosCount = p.getPareceres().stream().filter(par -> par.getDataEnvio() != null).count();
         boolean enviado = totalMedicos == ProcessoService.AVALIADORES_POR_PROCESSO
-            && temAnexo(p, TipoAnexo.EMAIL_ENVIADO_AVALIADORES);
+            && enviadosCount == totalMedicos;
         String detEnvio;
         if (totalMedicos != ProcessoService.AVALIADORES_POR_PROCESSO) {
             detEnvio = "Processo deve ter " + ProcessoService.AVALIADORES_POR_PROCESSO
                 + " medicos (atual: " + totalMedicos + ").";
-        } else if (!temAnexo(p, TipoAnexo.EMAIL_ENVIADO_AVALIADORES)) {
-            detEnvio = "Registre o envio anexando a copia do e-mail aos medicos.";
+        } else if (!enviado) {
+            detEnvio = "Registre o envio aos medicos (faltam " + (totalMedicos - enviadosCount)
+                + " de " + totalMedicos + ").";
         } else {
             detEnvio = "Enviado aos " + totalMedicos + " medicos.";
         }

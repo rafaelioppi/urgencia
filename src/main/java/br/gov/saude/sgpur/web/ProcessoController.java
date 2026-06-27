@@ -165,21 +165,24 @@ public class ProcessoController {
         return "redirect:/processos";
     }
 
-    /** Salva os pareceres (resultado/datas) editados na tela de detalhe. */
+    /** Salva os pareceres (envio/resultado/datas) editados na tela de detalhe. */
     @PostMapping("/{id}/pareceres")
     public String salvarPareceres(@PathVariable Long id,
                                   @RequestParam(required = false) java.util.List<Long> parecerId,
                                   @RequestParam(required = false) java.util.List<String> resultado,
+                                  @RequestParam(required = false) java.util.List<String> dataEnvio,
                                   RedirectAttributes ra) {
         Processo p = processoService.buscar(id);
         if (parecerId != null) {
             for (int i = 0; i < parecerId.size(); i++) {
                 Long pid = parecerId.get(i);
                 String res = (resultado != null && i < resultado.size()) ? resultado.get(i) : "";
+                String env = (dataEnvio != null && i < dataEnvio.size()) ? dataEnvio.get(i) : "";
                 p.getPareceres().stream()
                     .filter(par -> par.getId().equals(pid))
                     .findFirst()
                     .ifPresent(par -> {
+                        par.setDataEnvio((env == null || env.isBlank()) ? null : LocalDate.parse(env));
                         if (res == null || res.isBlank()) {
                             par.setResultado(null);
                         } else {
@@ -193,6 +196,20 @@ public class ProcessoController {
         }
         processoService.salvar(p);
         ra.addFlashAttribute("msg", "Pareceres atualizados.");
+        return "redirect:/processos/" + id + "#pareceres";
+    }
+
+    /** Registra a data de envio de hoje para todos os medicos do processo. */
+    @PostMapping("/{id}/registrar-envio")
+    public String registrarEnvio(@PathVariable Long id, RedirectAttributes ra) {
+        Processo p = processoService.buscar(id);
+        p.getPareceres().forEach(par -> {
+            if (par.getDataEnvio() == null) {
+                par.setDataEnvio(LocalDate.now());
+            }
+        });
+        processoService.salvar(p);
+        ra.addFlashAttribute("msg", "Envio aos medicos registrado.");
         return "redirect:/processos/" + id + "#pareceres";
     }
 
