@@ -59,6 +59,40 @@ public class AnexoStorageService {
         return anexoRepository.save(anexo);
     }
 
+    /** Salva um arquivo a partir de bytes (ex.: Relatorio Final gerado em PDF). */
+    @Transactional
+    public Anexo salvarBytes(Processo processo, TipoAnexo tipo, String descricao,
+                             String nomeArquivo, String contentType, byte[] dados) throws IOException {
+        Path pastaProcesso = raiz.resolve("processo-" + processo.getId());
+        Files.createDirectories(pastaProcesso);
+        String nomeFisico = UUID.randomUUID() + "_" + nomeArquivo.replaceAll("[^A-Za-z0-9._-]", "_");
+        Path destino = pastaProcesso.resolve(nomeFisico);
+        Files.write(destino, dados);
+
+        Anexo anexo = new Anexo();
+        anexo.setProcesso(processo);
+        anexo.setTipo(tipo);
+        anexo.setDescricao(descricao);
+        anexo.setNomeArquivo(nomeArquivo);
+        anexo.setContentType(contentType);
+        anexo.setTamanhoBytes((long) dados.length);
+        anexo.setCaminhoArmazenado(raiz.relativize(destino).toString());
+        return anexoRepository.save(anexo);
+    }
+
+    /** Remove todos os anexos de um tipo de um processo (arquivos + registros). */
+    @Transactional
+    public void removerPorTipo(Long processoId, TipoAnexo tipo) {
+        for (Anexo a : anexoRepository.findByProcessoIdAndTipo(processoId, tipo)) {
+            try {
+                Files.deleteIfExists(resolverArquivo(a));
+            } catch (IOException ignored) {
+                // best-effort
+            }
+            anexoRepository.delete(a);
+        }
+    }
+
     public Path resolverArquivo(Anexo anexo) {
         return raiz.resolve(anexo.getCaminhoArmazenado()).normalize();
     }

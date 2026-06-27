@@ -230,7 +230,19 @@ public class ProcessoController {
             ra.addFlashAttribute("erro", "Indeferimento exige o motivo.");
             return "redirect:/processos/" + id;
         }
-        processoService.decidir(id, decisao, motivoIndeferimento);
+        Processo p = processoService.decidir(id, decisao, motivoIndeferimento);
+        // Gera automaticamente o Relatorio Final e anexa ao processo (substitui o anterior).
+        if (decisao.isFinalizado()) {
+            try {
+                anexoStorage.removerPorTipo(id, TipoAnexo.RELATORIO_FINAL);
+                byte[] pdf = relatorioService.gerar(p);
+                String nome = "relatorio-processo-" + p.getNumero().replace("/", "-") + ".pdf";
+                anexoStorage.salvarBytes(p, TipoAnexo.RELATORIO_FINAL,
+                    "Relatorio final gerado na decisao", nome, "application/pdf", pdf);
+            } catch (IOException e) {
+                ra.addFlashAttribute("erro", "Decisao salva, mas falhou ao anexar o relatorio: " + e.getMessage());
+            }
+        }
         ra.addFlashAttribute("msg", "Decisao registrada: " + decisao.getDescricao());
         return "redirect:/processos/" + id;
     }
