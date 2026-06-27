@@ -68,6 +68,20 @@ public class AnexoStorageService {
             .orElseThrow(() -> new IllegalArgumentException("Anexo nao encontrado: " + id));
     }
 
+    /** Remove um anexo (arquivo em disco + registro no banco). Retorna o id do processo. */
+    @Transactional
+    public Long excluir(Long anexoId) {
+        Anexo a = buscar(anexoId);
+        Long processoId = a.getProcesso().getId();
+        try {
+            Files.deleteIfExists(resolverArquivo(a));
+        } catch (IOException ignored) {
+            // best-effort
+        }
+        anexoRepository.delete(a);
+        return processoId;
+    }
+
     /** Remove a pasta de anexos de um processo (usado ao excluir o processo). */
     public void removerPastaProcesso(Long processoId) {
         Path pasta = raiz.resolve("processo-" + processoId).normalize();

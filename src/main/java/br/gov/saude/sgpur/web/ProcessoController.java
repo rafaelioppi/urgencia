@@ -284,6 +284,13 @@ public class ProcessoController {
             .body(pdf);
     }
 
+    @PostMapping("/anexos/{anexoId}/excluir")
+    public String excluirAnexo(@PathVariable Long anexoId, RedirectAttributes ra) {
+        Long processoId = anexoStorage.excluir(anexoId);
+        ra.addFlashAttribute("msg", "Anexo removido.");
+        return "redirect:/processos/" + processoId + "#anexos";
+    }
+
     @GetMapping("/anexos/{anexoId}/download")
     public ResponseEntity<Resource> baixarAnexo(@PathVariable Long anexoId) throws MalformedURLException {
         Anexo anexo = anexoStorage.buscar(anexoId);

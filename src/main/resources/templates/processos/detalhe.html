@@ -263,7 +263,15 @@
                                 <a th:href="@{/processos/anexos/{id}/download(id=${a.id})}" th:text="${a.nomeArquivo}">arquivo</a>
                                 <span class="badge bg-light text-dark ms-1" th:text="${a.tipo.descricao}">tipo</span>
                             </span>
-                            <small class="text-muted" th:text="${#temporals.format(a.dataUpload, 'dd/MM/yyyy HH:mm')}"></small>
+                            <span class="d-flex align-items-center gap-2">
+                                <small class="text-muted" th:text="${#temporals.format(a.dataUpload, 'dd/MM/yyyy HH:mm')}"></small>
+                                <form th:action="@{/processos/anexos/{id}/excluir(id=${a.id})}" method="post"
+                                      onsubmit="return confirm('Remover este anexo?');">
+                                    <button class="btn btn-sm btn-outline-danger" title="Remover">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </span>
                         </li>
                     </ul>
                     <p class="text-muted small" th:if="${processo.anexos.isEmpty()}">Nenhum anexo ainda.</p>
