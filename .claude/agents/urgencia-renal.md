@@ -128,7 +128,14 @@ neste projeto, respeite rigorosamente o dominio e as regras a seguir.
 - Log de AUDITORIA (quem/o-que/quando) com tela /auditoria (ADMIN) - entidade
   LogAuditoria, AuditoriaService instrumentando processo/anexos/usuarios.
 - Numero sugerido no cadastro manual + validacao do formato NN/AAAA.
-- Testes: ProcessoService(7) + FluxoProcessoService(4) + EmailTemplate(3) = 14 ok.
+- Estatisticas por membro (designados/avaliados/favoraveis) - ParecerRepository.
+- Cards do painel clicaveis (filtram a lista por status).
+- PAGINACAO na lista de processos (15/pagina, preserva q e status).
+- Scripts start.ps1 / start.sh (forcam JDK 21). Pacote dist/ (sgpur-dist.zip).
+- CI no GitHub Actions (.github/workflows/ci.yml) VERDE. Badge no README.
+- .vscode/settings.json: nullAnalysis "disabled" (sem avisos amarelos).
+- Testes: ProcessoService(7) + FluxoProcessoService(4) + EmailTemplate(3) +
+  SgpurApplicationTests smoke(1) + SecurityIntegration(4) = 19 ok.
   README criado. Deploy preparado (deploy/) para Oracle Always Free - PAUSADO
   (cartao recusado; ver memoria deploy-sgpur-oracle).
 
