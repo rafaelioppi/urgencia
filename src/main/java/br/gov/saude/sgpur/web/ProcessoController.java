@@ -74,9 +74,14 @@ public class ProcessoController {
     @GetMapping
     public String listar(@RequestParam(required = false) String q,
                          @RequestParam(required = false) StatusProcesso status,
+                         @RequestParam(defaultValue = "0") int page,
                          Model model) {
-        var processos = processoService.buscar(q, status);
+        var pagina = processoService.buscar(q, status,
+            org.springframework.data.domain.PageRequest.of(Math.max(page, 0), 15));
+        var processos = pagina.getContent();
         model.addAttribute("processos", processos);
+        model.addAttribute("paginaAtual", pagina.getNumber());
+        model.addAttribute("totalPaginas", pagina.getTotalPages());
         model.addAttribute("q", q);
         model.addAttribute("statusSelecionado", status);
         // resumo de pendencia por processo (id -> texto)

@@ -36,9 +36,10 @@ public class ProcessoService {
         return processoRepository.findAllByOrderByAnoDescSequencialDesc();
     }
 
-    public List<Processo> buscar(String q, StatusProcesso status) {
+    public org.springframework.data.domain.Page<Processo> buscar(
+            String q, StatusProcesso status, org.springframework.data.domain.Pageable pageable) {
         String termo = (q == null || q.isBlank()) ? null : q.trim();
-        return processoRepository.buscar(termo, status);
+        return processoRepository.buscar(termo, status, pageable);
     }
 
     public Processo buscar(Long id) {

@@ -2,6 +2,8 @@ package br.gov.saude.sgpur.repository;
 
 import br.gov.saude.sgpur.domain.Processo;
 import br.gov.saude.sgpur.domain.StatusProcesso;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,5 +34,5 @@ public interface ProcessoRepository extends JpaRepository<Processo, Long> {
                or lower(p.solicitanteEquipe) like lower(concat('%', :q, '%')))
         order by p.ano desc, p.sequencial desc
         """)
-    List<Processo> buscar(@Param("q") String q, @Param("status") StatusProcesso status);
+    Page<Processo> buscar(@Param("q") String q, @Param("status") StatusProcesso status, Pageable pageable);
 }

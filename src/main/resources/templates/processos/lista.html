@@ -68,6 +68,24 @@
             </table>
         </div>
     </div>
+
+    <nav class="mt-3" th:if="${totalPaginas > 1}">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item" th:classappend="${paginaAtual == 0} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/processos(q=${q}, status=${statusSelecionado}, page=${paginaAtual - 1})}">Anterior</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">
+                    <span th:text="${paginaAtual + 1}">1</span> / <span th:text="${totalPaginas}">1</span>
+                </span>
+            </li>
+            <li class="page-item" th:classappend="${paginaAtual + 1 >= totalPaginas} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/processos(q=${q}, status=${statusSelecionado}, page=${paginaAtual + 1})}">Proxima</a>
+            </li>
+        </ul>
+    </nav>
 </div>
 
 <script th:replace="~{layout :: scripts}"></script>
