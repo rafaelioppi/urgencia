@@ -46,6 +46,28 @@
         </div>
     </div>
 
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning-subtle d-flex justify-content-between">
+            <span><i class="bi bi-hourglass-split"></i> Aguardando acao</span>
+            <span class="badge bg-warning text-dark" th:text="${pendentes.size()}">0</span>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item" th:each="p : ${pendentes}">
+                <div class="d-flex justify-content-between">
+                    <a th:href="@{/processos/{id}(id=${p.id})}" class="text-decoration-none fw-semibold"
+                       th:text="${p.numero} + ' - ' + ${p.pacienteNome}">00/0000</a>
+                </div>
+                <small class="text-muted">
+                    <i class="bi bi-arrow-right-short"></i>
+                    <span th:text="${pendencias.get(p.id)}">o que falta</span>
+                </small>
+            </li>
+            <li class="list-group-item text-muted" th:if="${pendentes.isEmpty()}">
+                Nenhum processo aguardando acao.
+            </li>
+        </ul>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex justify-content-between">
             <span>Ultimos processos</span>
