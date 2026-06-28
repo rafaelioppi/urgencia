@@ -10,10 +10,7 @@
         <div>
             <h1 class="h3 mb-1">
                 <span th:text="${processo.identificacao()}">00/0000 - Paciente - RGCT</span>
-                <span class="badge align-middle"
-                      th:classappend="${processo.status.name() == 'DEFERIDO'} ? 'bg-success' :
-                                      (${processo.status.name() == 'INDEFERIDO'} ? 'bg-danger' :
-                                      (${processo.status.name() == 'CANCELADO'} ? 'bg-secondary' : 'bg-warning text-dark'))"
+                <span class="badge align-middle" th:classappend="${processo.status.bootstrapBadge}"
                       th:text="${processo.status.descricao}">status</span>
             </h1>
         </div>
@@ -115,6 +112,12 @@
                         Envio registrado em
                         <strong th:text="${#temporals.format(processo.pareceres[0].dataEnvio, 'dd/MM/yyyy')}"></strong>
                         para os 3 avaliadores.
+                        <span th:if="${solicitacaoPdf != null}" class="ms-3">
+                            <a th:href="@{/processos/anexos/{id}/download(id=${solicitacaoPdf.id})}"
+                               class="btn btn-sm btn-outline-danger" title="Baixar solicitacao de avaliacao gerada automaticamente">
+                                <i class="bi bi-file-earmark-pdf"></i> Solicitacao PDF
+                            </a>
+                        </span>
                     </div>
                     <div th:if="${processo.pareceres[0].dataEnvio == null}" class="alert alert-warning py-2 mb-3">
                         <i class="bi bi-hourglass"></i> Envio ainda nao registrado.

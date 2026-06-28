@@ -5,12 +5,14 @@ package br.gov.saude.sgpur.domain;
  * fluxo, que sao conduzidas por e-mail (recebimento, envio, votos, resposta).
  */
 public enum TipoAnexo {
+    SOLICITACAO_AVALIADOR("Solicitacao de avaliacao gerada pelo sistema"),
     SOLICITACAO_RECEBIDA("E-mail/documento de solicitacao recebida"),
     DOCUMENTO_PACIENTE("Documento do paciente"),
     EMAIL_ENVIADO_AVALIADORES("Copia do e-mail enviado aos avaliadores"),
     EMAIL_PARECER_RECEBIDO("Copia do e-mail de parecer recebido do avaliador"),
     RESPOSTA_AVALIADOR("Copia do e-mail de resposta de avaliador especifico"),
     OFICIO_INDEFERIMENTO("Oficio de indeferimento"),
+    COMPROVANTE_SNT("Comprovante de insercao da urgencia renal no SNT"),
     EMAIL_RESPOSTA_SOLICITANTE("Copia do e-mail de resposta ao solicitante"),
     RELATORIO_FINAL("Relatorio final do processo"),
     OUTRO("Outro");

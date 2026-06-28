@@ -101,6 +101,17 @@ public class FluxoProcessoService {
             anterioresConcluidas = anterioresConcluidas && oficioOk;
         }
 
+        // 5b. Comprovante de insercao da urgencia renal no SNT (apenas quando deferido)
+        if (p.getStatus() == StatusProcesso.DEFERIDO) {
+            boolean comprovanteOk = temAnexo(p, TipoAnexo.COMPROVANTE_SNT);
+            etapas.add(montar("Comprovante SNT", "clipboard2-check-fill",
+                comprovanteOk, anterioresConcluidas,
+                comprovanteOk ? "Comprovante de insercao da urgencia renal no SNT anexado."
+                              : "Anexe o comprovante de insercao da urgencia renal no "
+                                + "Sistema Nacional de Transplantes (SNT)."));
+            anterioresConcluidas = anterioresConcluidas && comprovanteOk;
+        }
+
         // 6. Resposta ao solicitante
         boolean respostaOk = p.isEmailEnviadoSolicitante();
         etapas.add(montar("Resposta ao solicitante", "envelope-check-fill",

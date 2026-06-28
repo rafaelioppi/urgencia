@@ -44,6 +44,16 @@ class EmailTemplateServiceTest {
     }
 
     @Test
+    void emailDeferidoMencionaComprovanteSntEmAnexo() {
+        Processo p = processo();
+        p.setStatus(StatusProcesso.DEFERIDO);
+        EmailTemplate deferido = service.gerar(p).stream()
+            .filter(e -> e.chave().equals("deferido")).findFirst().orElseThrow();
+        assertThat(deferido.corpo()).contains("EM ANEXO");
+        assertThat(deferido.corpo()).contains("Sistema Nacional de Transplantes");
+    }
+
+    @Test
     void emAnaliseNaoGeraEmailDeResposta() {
         Processo p = processo(); // EM_ANALISE por padrao
         long respostas = service.gerar(p).stream()
