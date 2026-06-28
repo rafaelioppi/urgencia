@@ -39,3 +39,7 @@ deploy/sgpur.env
 ### Pacote distribuivel (gerado) ###
 /dist/
 
+### Node / Bun (nao versionar dependencias) ###
+node_modules/
+package-lock.json
+
