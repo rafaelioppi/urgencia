@@ -21,12 +21,15 @@ Pacote base `br.gov.saude.sgpur`.
 .\start.ps1 prod       # prod (Neon) — usa application-local.yml (gitignored)
 ```
 - App em http://localhost:8080 · login inicial `admin` / `admin123`.
-- Testes: `mvn test` (29 testes). Build: `mvn -DskipTests package` (gera o JAR).
-- Sempre compile/rode com o **JDK 21**.
+- Testes: `.\test.ps1` (ou `mvn test`) — **37 testes**, sempre com **JDK 21**.
+  Build: `mvn -DskipTests package` (gera o JAR).
 
 ## Regras de negócio (não violar)
-- Cada processo vai para **exatamente 3 médicos**; **2 favoráveis = Deferido**,
-  senão **Indeferido** (exige **ofício + motivo**).
+- Cada processo vai para **exatamente 3 médicos**. Decisão por **maioria
+  simples (2 de 3)**: **≥2 favoráveis = Deferido**; **≥2 desfavoráveis =
+  Indeferido** (exige **ofício + motivo**). As duas regras são **impostas** no
+  serviço e no controller (`decidir` rejeita Deferido sem 2 favoráveis e
+  Indeferido sem 2 desfavoráveis).
 - **Deferido exige anexar o comprovante de inserção da urgência renal no SNT**
   (`TipoAnexo.COMPROVANTE_SNT`) e enviá-lo junto na resposta ao solicitante; a
   etapa "Comprovante SNT" bloqueia a conclusão até o anexo existir (simétrico
@@ -38,7 +41,8 @@ Pacote base `br.gov.saude.sgpur`.
   `docs/PLANO-FLUXO.md`.
 - Numeração `NN/AAAA`: **manual em 2026**, **automática a partir de 2027**.
 - Fluxo por e-mail com anexos por etapa; e-mail aos médicos **oculta dados do
-  paciente** (LGPD). Decisão manual com **sugestão automática** (regra 2/3).
+  paciente** (LGPD). Decisão manual com **sugestão automática** por maioria
+  simples (2/3 favoráveis → Deferido; 2/3 desfavoráveis → Indeferido).
 - "Membros da Urgência Renal" (nunca "Câmara Técnica").
 
 ## Convenções de código

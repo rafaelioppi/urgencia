@@ -329,6 +329,20 @@ public class ProcessoController {
             ra.addFlashAttribute("erro", "Indeferimento exige o motivo.");
             return "redirect:/processos/" + id;
         }
+        // Regra (maioria simples): Deferido exige >=2 favoraveis; Indeferido >=2 desfavoraveis.
+        Processo atual = processoService.buscar(id);
+        if (decisao == StatusProcesso.DEFERIDO
+                && processoService.contarFavoraveis(atual) < ProcessoService.FAVORAVEIS_PARA_DEFERIR) {
+            ra.addFlashAttribute("erro", "Deferimento exige no minimo "
+                + ProcessoService.FAVORAVEIS_PARA_DEFERIR + " pareceres favoraveis.");
+            return "redirect:/processos/" + id;
+        }
+        if (decisao == StatusProcesso.INDEFERIDO
+                && processoService.contarNaoFavoraveis(atual) < ProcessoService.DESFAVORAVEIS_PARA_INDEFERIR) {
+            ra.addFlashAttribute("erro", "Indeferimento exige no minimo "
+                + ProcessoService.DESFAVORAVEIS_PARA_INDEFERIR + " pareceres desfavoraveis.");
+            return "redirect:/processos/" + id;
+        }
         Processo p = processoService.decidir(id, decisao, motivoIndeferimento);
         // Gera automaticamente o Oficio (se indeferido) e o Relatorio Final, anexando-os.
         if (decisao == StatusProcesso.INDEFERIDO) {

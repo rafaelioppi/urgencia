@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,5 +112,45 @@ class ProcessoServiceTest {
         when(processoRepository.findById(3L)).thenReturn(java.util.Optional.of(p));
         service.atualizarStatusPorPareceres(3L);
         assertThat(p.getStatus()).isEqualTo(StatusProcesso.DEFERIDO);
+    }
+
+    @Test
+    void decidirDeferidoExigeNoMinimoDoisFavoraveis() {
+        Processo p = comPareceres(ResultadoParecer.FAVORAVEL,
+            ResultadoParecer.NAO_FAVORAVEL, ResultadoParecer.NAO_FAVORAVEL);
+        when(processoRepository.findById(4L)).thenReturn(java.util.Optional.of(p));
+        assertThatThrownBy(() -> service.decidir(4L, StatusProcesso.DEFERIDO, null))
+            .isInstanceOf(IllegalStateException.class);
+        assertThat(p.getStatus()).isNotEqualTo(StatusProcesso.DEFERIDO);
+    }
+
+    @Test
+    void decidirDeferidoComDoisFavoraveis() {
+        Processo p = comPareceres(ResultadoParecer.FAVORAVEL,
+            ResultadoParecer.FAVORAVEL, ResultadoParecer.NAO_FAVORAVEL);
+        when(processoRepository.findById(5L)).thenReturn(java.util.Optional.of(p));
+        when(processoRepository.save(p)).thenReturn(p);
+        service.decidir(5L, StatusProcesso.DEFERIDO, null);
+        assertThat(p.getStatus()).isEqualTo(StatusProcesso.DEFERIDO);
+    }
+
+    @Test
+    void decidirIndeferidoExigeNoMinimoDoisDesfavoraveis() {
+        Processo p = comPareceres(ResultadoParecer.FAVORAVEL,
+            ResultadoParecer.FAVORAVEL, ResultadoParecer.NAO_FAVORAVEL);
+        when(processoRepository.findById(6L)).thenReturn(java.util.Optional.of(p));
+        assertThatThrownBy(() -> service.decidir(6L, StatusProcesso.INDEFERIDO, "motivo"))
+            .isInstanceOf(IllegalStateException.class);
+        assertThat(p.getStatus()).isNotEqualTo(StatusProcesso.INDEFERIDO);
+    }
+
+    @Test
+    void decidirIndeferidoComDoisDesfavoraveis() {
+        Processo p = comPareceres(ResultadoParecer.NAO_FAVORAVEL,
+            ResultadoParecer.NAO_FAVORAVEL, ResultadoParecer.FAVORAVEL);
+        when(processoRepository.findById(7L)).thenReturn(java.util.Optional.of(p));
+        when(processoRepository.save(p)).thenReturn(p);
+        service.decidir(7L, StatusProcesso.INDEFERIDO, "motivo");
+        assertThat(p.getStatus()).isEqualTo(StatusProcesso.INDEFERIDO);
     }
 }

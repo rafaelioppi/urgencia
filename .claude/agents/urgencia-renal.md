@@ -45,9 +45,11 @@ o dominio e as regras a seguir.
    Se for membro, fica impedido de avaliar o proprio processo (conflito).
 3. **Cada processo vai para EXATAMENTE 3 medicos**
    (`ProcessoService.AVALIADORES_POR_PROCESSO = 3`).
-4. **Regra de decisao:** 2 de 3 favoraveis = **DEFERIDO**
-   (`FAVORAVEIS_PARA_DEFERIR = 2`). Caso contrario = **INDEFERIDO**, que EXIGE
-   oficio com motivo da reprovacao + data de emissao + envio ao solicitante.
+4. **Regra de decisao (MAIORIA SIMPLES, imposta no servico e no controller):**
+   >=2 favoraveis = **DEFERIDO** (`FAVORAVEIS_PARA_DEFERIR = 2`); >=2
+   desfavoraveis = **INDEFERIDO** (`DESFAVORAVEIS_PARA_INDEFERIR = 2`). Sem 2
+   votos do tipo, `decidir` rejeita a decisao. INDEFERIDO EXIGE oficio com
+   motivo da reprovacao + data de emissao + envio ao solicitante.
    **DEFERIDO EXIGE** anexar o comprovante de insercao da urgencia renal no SNT
    (`TipoAnexo.COMPROVANTE_SNT`) e envia-lo junto na resposta ao solicitante; a
    etapa "Comprovante SNT" em `FluxoProcessoService` bloqueia a conclusao ate o
@@ -59,7 +61,8 @@ o dominio e as regras a seguir.
    SOLICITADO; vira ENVIADO ao registrar envio; vai a SOLICITA_INFORMACAO se um
    medico pede dados antes da decisao. Helpers de badge no enum
    (`getBadgeClasse`/`getBadgeIcone`/`getBootstrapBadge`).
-6. Decisao **manual** (operador decide) com **sugestao automatica** (regra 2/3).
+6. Decisao **manual** (operador decide) com **sugestao automatica** por maioria
+   simples (2/3 favoraveis -> Deferido; 2/3 desfavoraveis -> Indeferido).
 7. **Numeracao NN/AAAA:** manual em 2026; **automatica** (sequencial por ano)
    a partir de 2027 (`ANO_NUMERACAO_AUTOMATICA = 2027`).
 8. **Fluxo por e-mail** com anexos por etapa (entidade `Anexo` + `TipoAnexo`).
@@ -148,5 +151,5 @@ o dominio e as regras a seguir.
 - Mantenha o estilo: entidades sem Lombok, servicos em `service/`, controllers
   em `web/`, templates com fragments de `layout.html`.
 - Compile e valide com JDK 21 antes de concluir.
-- Rode `mvn test` para verificar se quebrou algo (22 testes).
+- Rode `.\test.ps1` (ou `mvn test`) para verificar se quebrou algo (37 testes).
 - Commits pequenos, push para `origin/main`.

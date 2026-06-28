@@ -20,8 +20,11 @@ public class ProcessoService {
     /** Cada processo e enviado a exatamente 3 medicos avaliadores. */
     public static final int AVALIADORES_POR_PROCESSO = 3;
 
-    /** Quantidade de pareceres favoraveis necessaria para deferir. */
+    /** Quantidade de pareceres favoraveis necessaria para deferir (maioria simples). */
     public static final int FAVORAVEIS_PARA_DEFERIR = 2;
+
+    /** Quantidade de pareceres desfavoraveis necessaria para indeferir (maioria simples). */
+    public static final int DESFAVORAVEIS_PARA_INDEFERIR = 2;
 
     private final ProcessoRepository processoRepository;
     private final MembroUrgenciaRenalRepository membroRepository;
@@ -157,6 +160,12 @@ public class ProcessoService {
             .count();
     }
 
+    public long contarNaoFavoraveis(Processo processo) {
+        return processo.getPareceres().stream()
+            .filter(p -> p.getResultado() == ResultadoParecer.NAO_FAVORAVEL)
+            .count();
+    }
+
     public long contarRespondidos(Processo processo) {
         return processo.getPareceres().stream()
             .filter(p -> p.getResultado() != null)
@@ -164,20 +173,19 @@ public class ProcessoService {
     }
 
     /**
-     * Sugestao de decisao pela regra "2 de 3 favoraveis = Deferido".
-     * - 2+ favoraveis -> DEFERIDO (mesmo antes do 3o responder).
-     * - todos os 3 responderam e nao alcancou 2 favoraveis -> INDEFERIDO.
-     * - caso contrario (faltam respostas) -> Optional vazio.
+     * Sugestao de decisao por MAIORIA SIMPLES (2 de 3):
+     * - 2+ pareceres favoraveis -> DEFERIDO (mesmo antes do 3o responder).
+     * - 2+ pareceres desfavoraveis -> INDEFERIDO (mesmo antes do 3o responder).
+     * - caso contrario (sem maioria ainda) -> Optional vazio.
      */
     public Optional<StatusProcesso> sugerirDecisao(Processo processo) {
         long favoraveis = contarFavoraveis(processo);
-        long respondidos = contarRespondidos(processo);
-        int total = processo.getPareceres().size();
+        long naoFavoraveis = contarNaoFavoraveis(processo);
 
         if (favoraveis >= FAVORAVEIS_PARA_DEFERIR) {
             return Optional.of(StatusProcesso.DEFERIDO);
         }
-        if (respondidos == total && total > 0) {
+        if (naoFavoraveis >= DESFAVORAVEIS_PARA_INDEFERIR) {
             return Optional.of(StatusProcesso.INDEFERIDO);
         }
         return Optional.empty();
@@ -187,6 +195,17 @@ public class ProcessoService {
     @Transactional
     public Processo decidir(Long id, StatusProcesso decisao, String motivoIndeferimento) {
         Processo p = buscar(id);
+        // Regra (maioria simples): Deferido exige >=2 favoraveis; Indeferido >=2 desfavoraveis.
+        if (decisao == StatusProcesso.DEFERIDO
+                && contarFavoraveis(p) < FAVORAVEIS_PARA_DEFERIR) {
+            throw new IllegalStateException("Deferimento exige no minimo "
+                + FAVORAVEIS_PARA_DEFERIR + " pareceres favoraveis.");
+        }
+        if (decisao == StatusProcesso.INDEFERIDO
+                && contarNaoFavoraveis(p) < DESFAVORAVEIS_PARA_INDEFERIR) {
+            throw new IllegalStateException("Indeferimento exige no minimo "
+                + DESFAVORAVEIS_PARA_INDEFERIR + " pareceres desfavoraveis.");
+        }
         p.setStatus(decisao);
         p.setDataDecisao(LocalDateTime.now());
         if (decisao == StatusProcesso.INDEFERIDO) {
