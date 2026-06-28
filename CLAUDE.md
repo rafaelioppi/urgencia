@@ -21,7 +21,7 @@ Pacote base `br.gov.saude.sgpur`.
 .\start.ps1 prod       # prod (Neon) — usa application-local.yml (gitignored)
 ```
 - App em http://localhost:8080 · login inicial `admin` / `admin123`.
-- Testes: `mvn test` (19 testes). Build: `mvn -DskipTests package` (gera o JAR).
+- Testes: `mvn test` (22 testes). Build: `mvn -DskipTests package` (gera o JAR).
 - Sempre compile/rode com o **JDK 21**.
 
 ## Regras de negócio (não violar)
