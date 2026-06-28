@@ -12,6 +12,7 @@ public enum TipoAnexo {
     EMAIL_PARECER_RECEBIDO("Copia do e-mail de parecer recebido do avaliador"),
     RESPOSTA_AVALIADOR("Copia do e-mail de resposta de avaliador especifico"),
     OFICIO_INDEFERIMENTO("Oficio de indeferimento"),
+    COMPROVANTE_SNT("Comprovante de insercao da urgencia renal no SNT"),
     EMAIL_RESPOSTA_SOLICITANTE("Copia do e-mail de resposta ao solicitante"),
     RELATORIO_FINAL("Relatorio final do processo"),
     OUTRO("Outro");

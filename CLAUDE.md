@@ -21,12 +21,16 @@ Pacote base `br.gov.saude.sgpur`.
 .\start.ps1 prod       # prod (Neon) — usa application-local.yml (gitignored)
 ```
 - App em http://localhost:8080 · login inicial `admin` / `admin123`.
-- Testes: `mvn test` (26 testes). Build: `mvn -DskipTests package` (gera o JAR).
+- Testes: `mvn test` (29 testes). Build: `mvn -DskipTests package` (gera o JAR).
 - Sempre compile/rode com o **JDK 21**.
 
 ## Regras de negócio (não violar)
 - Cada processo vai para **exatamente 3 médicos**; **2 favoráveis = Deferido**,
   senão **Indeferido** (exige **ofício + motivo**).
+- **Deferido exige anexar o comprovante de inserção da urgência renal no SNT**
+  (`TipoAnexo.COMPROVANTE_SNT`) e enviá-lo junto na resposta ao solicitante; a
+  etapa "Comprovante SNT" bloqueia a conclusão até o anexo existir (simétrico
+  ao ofício no indeferimento). O comprovante é gerado fora do sistema.
 - Status (ciclo expandido, reflete a planilha): `Solicitado` → `Enviado` →
   { `Deferido` / `Indeferido` / `Solicita informação` } (+ `Cancelado`).
   Finais: Deferido/Indeferido/Cancelado. `Em análise` é mantido como sinônimo

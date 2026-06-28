@@ -71,4 +71,37 @@ class FluxoProcessoServiceTest {
         String resumo = fluxo().resumoPendencia(processoComTresPareceres());
         assertThat(resumo).contains("Recebimento");
     }
+
+    @Test
+    void incluiEtapaComprovanteSntApenasQuandoDeferido() {
+        Processo def = processoComTresPareceres();
+        def.setStatus(StatusProcesso.DEFERIDO);
+        boolean temSnt = fluxo().montarEtapas(def).stream()
+            .anyMatch(e -> e.titulo().equals("Comprovante SNT"));
+        assertThat(temSnt).isTrue();
+
+        Processo ind = processoComTresPareceres();
+        ind.setStatus(StatusProcesso.INDEFERIDO);
+        boolean temSnt2 = fluxo().montarEtapas(ind).stream()
+            .anyMatch(e -> e.titulo().equals("Comprovante SNT"));
+        assertThat(temSnt2).isFalse();
+    }
+
+    @Test
+    void deferidoSoConcluiComprovanteSntComAnexo() {
+        Processo p = processoComTresPareceres();
+        p.setStatus(StatusProcesso.DEFERIDO);
+
+        EtapaFluxo sntSem = fluxo().montarEtapas(p).stream()
+            .filter(e -> e.titulo().equals("Comprovante SNT")).findFirst().orElseThrow();
+        assertThat(sntSem.estado()).isNotEqualTo(EtapaFluxo.Estado.CONCLUIDA);
+
+        Anexo comprovante = new Anexo();
+        comprovante.setTipo(TipoAnexo.COMPROVANTE_SNT);
+        p.addAnexo(comprovante);
+
+        EtapaFluxo sntCom = fluxo().montarEtapas(p).stream()
+            .filter(e -> e.titulo().equals("Comprovante SNT")).findFirst().orElseThrow();
+        assertThat(sntCom.estado()).isEqualTo(EtapaFluxo.Estado.CONCLUIDA);
+    }
 }

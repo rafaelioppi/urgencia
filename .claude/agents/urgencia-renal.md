@@ -48,6 +48,10 @@ o dominio e as regras a seguir.
 4. **Regra de decisao:** 2 de 3 favoraveis = **DEFERIDO**
    (`FAVORAVEIS_PARA_DEFERIR = 2`). Caso contrario = **INDEFERIDO**, que EXIGE
    oficio com motivo da reprovacao + data de emissao + envio ao solicitante.
+   **DEFERIDO EXIGE** anexar o comprovante de insercao da urgencia renal no SNT
+   (`TipoAnexo.COMPROVANTE_SNT`) e envia-lo junto na resposta ao solicitante; a
+   etapa "Comprovante SNT" em `FluxoProcessoService` bloqueia a conclusao ate o
+   anexo existir (simetrico ao oficio no indeferimento).
 5. **Status (ciclo expandido):** SOLICITADO -> ENVIADO ->
    { DEFERIDO, INDEFERIDO, SOLICITA_INFORMACAO } (+ CANCELADO a qualquer
    momento). Finais: DEFERIDO/INDEFERIDO/CANCELADO. `EM_ANALISE` permanece como

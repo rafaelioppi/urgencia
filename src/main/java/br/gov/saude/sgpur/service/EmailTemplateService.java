@@ -101,6 +101,9 @@ public class EmailTemplateService {
 
             Equipe solicitante: %s
 
+            Segue EM ANEXO o comprovante de que a urgencia renal foi inserida no
+            Sistema Nacional de Transplantes (SNT).
+
             Permanecemos a disposicao para esclarecimentos.
 
             Atenciosamente,

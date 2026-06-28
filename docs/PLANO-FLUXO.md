@@ -56,7 +56,7 @@ Registros antigos permanecem `EM_ANALISE` e são tratados como "em andamento".
 | 6 | Recebe pareceres (2/3 favoráveis = deferido; solicita info) | `ProcessoController.salvarPareceres` → `ProcessoService.atualizarStatusPorPareceres` + `sugerirDecisao` · `processos/detalhe.html#respostas` | **SOLICITA_INFORMACAO** se algum médico pediu info; senão permanece ENVIADO |
 | 7 | Decisão final (manual, com sugestão automática) | `ProcessoController.decidir` → `ProcessoService.decidir` · `detalhe.html#decisao` | **DEFERIDO / INDEFERIDO** (ou CANCELADO) |
 | 8 | Médico pede info → e-mail ao solicitante | `EmailTemplateService.emailSolicitaInfo` (chave `solicita-info`), exibido quando status=SOLICITA_INFORMACAO · `detalhe.html` (lista de e-mails) | mantém SOLICITA_INFORMACAO |
-| 9 | Comunica decisão por ofício ao solicitante | `OficioService` (gerado automaticamente ao indeferir em `decidir`) · `EmailTemplateService.emailDeferido/emailIndeferido` · `detalhe.html#finalizacao` | — |
+| 9 | Comunica decisão ao solicitante. **Se DEFERIDO:** obrigatório anexar o comprovante de inserção da urgência renal no SNT e enviá-lo junto. **Se INDEFERIDO:** ofício + motivo + data. | `OficioService` (ofício no indeferimento) · `EmailTemplateService.emailDeferido` (texto cita o comprovante SNT EM ANEXO) / `emailIndeferido` · etapa "Comprovante SNT" em `FluxoProcessoService` bloqueia até `temAnexo(COMPROVANTE_SNT)` · upload via `detalhe.html#anexos` (tipo `COMPROVANTE_SNT`) | — |
 | 10 | Arquivamento final (relatório PDF) | `RelatorioService` (anexado automaticamente ao finalizar, guard `status.isFinalizado()`) | — |
 
 ## Regra de decisão (inalterada)
@@ -64,6 +64,12 @@ Registros antigos permanecem `EM_ANALISE` e são tratados como "em andamento".
 - 2 favoráveis = DEFERIDO (`FAVORAVEIS_PARA_DEFERIR = 2`); senão INDEFERIDO.
 - Decisão **manual** com **sugestão automática** (`sugerirDecisao`).
 - INDEFERIDO exige motivo + ofício (gerado em `decidir`).
+- **DEFERIDO exige** anexar o **comprovante de inserção da urgência renal no
+  SNT** (`TipoAnexo.COMPROVANTE_SNT`) antes de concluir a comunicação ao
+  solicitante. A etapa "Comprovante SNT" (`FluxoProcessoService`) bloqueia o
+  fluxo enquanto o anexo faltar, de forma simétrica ao ofício no indeferimento.
+  O comprovante é gerado fora do sistema (operador insere a urgência no SNT e
+  salva o comprovante) e anexado ao processo.
 
 ## Painel (dashboard)
 - `web/HomeController` monta a planilha (`PainelLinha`) com os 3 médicos e o
