@@ -9,6 +9,13 @@ spring:
     active: dev
   thymeleaf:
     cache: false
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: "/**"
   mvc:
     hiddenmethod:
       filter:
