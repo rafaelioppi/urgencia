@@ -44,6 +44,14 @@ else
   PORTA=8080
 fi
 
+# --- Libera a porta antes de subir ---
+PORTA_PID="$(lsof -ti:"$PORTA" 2>/dev/null || true)"
+if [ -n "$PORTA_PID" ]; then
+  echo "==> Liberando porta $PORTA (PID $PORTA_PID)..."
+  kill -9 $PORTA_PID 2>/dev/null || true
+  sleep 1
+fi
+
 # --- URL e abertura de navegador ---
 if [ -n "${CODESPACE_NAME:-}" ]; then
   DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
