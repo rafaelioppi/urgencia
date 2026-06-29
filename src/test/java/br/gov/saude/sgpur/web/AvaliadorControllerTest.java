@@ -91,6 +91,49 @@ class AvaliadorControllerTest {
 
     @Test
     @WithMockUser(username = "avaliador1", roles = "AVALIADOR")
+    void contagemDePendentesIgnoraVotadosEProcessosNaoAtivos() throws Exception {
+        when(usuarioRepo.findByUsername("avaliador1")).thenReturn(Optional.of(usuario));
+
+        // Pendente valido (processo ENVIADO, sem resultado)
+        Parecer pendenteAtivo = new Parecer(membro);
+        pendenteAtivo.setProcesso(processo); // status ENVIADO
+        pendenteAtivo.setDataEnvio(LocalDate.now());
+
+        // Processo ja decidido — nao conta mesmo sem resultado no parecer
+        Processo decidido = new Processo();
+        decidido.setId(2L);
+        decidido.setStatus(StatusProcesso.DEFERIDO);
+        Parecer pendenteInativo = new Parecer(membro);
+        pendenteInativo.setProcesso(decidido);
+        pendenteInativo.setDataEnvio(LocalDate.now());
+
+        // O repositorio ja filtra resultado nulo + dataEnvio nao nula; o filtro de
+        // status (ENVIADO/EM_ANALISE) acontece no controller/advice.
+        when(parecerRepo.findByMembroIdAndResultadoIsNullAndDataEnvioIsNotNull(10L))
+            .thenReturn(List.of(pendenteAtivo, pendenteInativo));
+        when(anexoRepo.findByProcessoIdAndTipo(any(Long.class), any()))
+            .thenReturn(List.of());
+
+        // So 1 dos 2 deve ser contado (o do processo ativo)
+        mvc.perform(get("/avaliador"))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("pendentesAvaliador", 1));
+    }
+
+    @Test
+    @WithMockUser(username = "operador1", roles = "OPERADOR")
+    void contagemDePendentesNaoConsultaRepositorioParaNaoAvaliador() throws Exception {
+        // Sem ROLE_AVALIADOR o advice deve curto-circuitar: o badge nao e calculado
+        // e o repositorio de pareceres NAO e consultado para a contagem.
+        // (a propria rota /avaliador rejeita o OPERADOR; o ponto e o advice global)
+        mvc.perform(get("/avaliador"));
+
+        verify(parecerRepo, never())
+            .findByMembroIdAndResultadoIsNullAndDataEnvioIsNotNull(any());
+    }
+
+    @Test
+    @WithMockUser(username = "avaliador1", roles = "AVALIADOR")
     void votarExibe403ParaProcessoAlheio() throws Exception {
         when(usuarioRepo.findByUsername("avaliador1")).thenReturn(Optional.of(usuario));
         // Processo 99 nao tem parecer deste membro

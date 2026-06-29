@@ -62,16 +62,8 @@ public class AvaliadorController {
     public String lista(Principal principal, Model model) {
         MembroUrgenciaRenal membro = resolverMembro(principal);
 
-        List<Parecer> pendentes = parecerRepo
-            .findByMembroIdAndResultadoIsNullAndDataEnvioIsNotNull(membro.getId());
-
-        // Filtra apenas processos ENVIADO ou EM_ANALISE (status ativo para votacao)
-        List<Parecer> parecersFiltrados = pendentes.stream()
-            .filter(par -> {
-                StatusProcesso s = par.getProcesso().getStatus();
-                return s == StatusProcesso.ENVIADO || s == StatusProcesso.EM_ANALISE;
-            })
-            .toList();
+        // Regra unica de "pendentes do avaliador" (reutilizada pelo badge global).
+        List<Parecer> parecersFiltrados = pendentesDoMembro(parecerRepo, membro.getId());
 
         // Mapas por processoId — passados ao template para evitar logica na view.
         Map<Long, Anexo> pdfPorProcesso = new HashMap<>();
@@ -164,6 +156,28 @@ public class AvaliadorController {
         ra.addFlashAttribute("msg",
             "Voto registrado: " + resultado.getDescricao() + ". Obrigado pela avaliacao.");
         return "redirect:/avaliador";
+    }
+
+    // -------------------------------------------------------------------------
+    // Regra reutilizavel de pendencias (compartilhada com o badge global)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Pareceres pendentes de voto do membro: sem resultado, ja enviados e cujo
+     * processo esta em status ativo para votacao (ENVIADO ou EM_ANALISE).
+     *
+     * Regra UNICA — usada tanto pela lista do portal quanto pelo contador da
+     * navbar ({@code GlobalModelAdvice}) para nao duplicar o criterio.
+     */
+    static List<Parecer> pendentesDoMembro(ParecerRepository parecerRepo, Long membroId) {
+        return parecerRepo
+            .findByMembroIdAndResultadoIsNullAndDataEnvioIsNotNull(membroId)
+            .stream()
+            .filter(par -> {
+                StatusProcesso s = par.getProcesso().getStatus();
+                return s == StatusProcesso.ENVIADO || s == StatusProcesso.EM_ANALISE;
+            })
+            .toList();
     }
 
     // -------------------------------------------------------------------------
