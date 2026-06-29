@@ -144,6 +144,11 @@ public class AvaliadorController {
         parecer.setDataHoraVoto(LocalDateTime.now());
         parecer.setVotadoPor(principal.getName());
         parecer.setOrigem(OrigemParecer.AVALIADOR_SISTEMA);
+        // Justificativa e material INTERNO do operador (nunca vaza a outros
+        // avaliadores). Vazio/em-branco vira null para nao poluir o banco.
+        String justificativaLimpa = (justificativa == null || justificativa.isBlank())
+            ? null : justificativa.trim();
+        parecer.setJustificativa(justificativaLimpa);
         parecerRepo.save(parecer);
 
         // Atualiza o status do processo (pode ir para SOLICITA_INFORMACAO)

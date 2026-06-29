@@ -141,6 +141,45 @@ class AvaliadorControllerTest {
 
     @Test
     @WithMockUser(username = "avaliador1", roles = "AVALIADOR")
+    void registrarVotoPersisteJustificativa() throws Exception {
+        when(usuarioRepo.findByUsername("avaliador1")).thenReturn(Optional.of(usuario));
+        when(parecerRepo.findByProcessoIdAndMembroId(1L, 10L)).thenReturn(Optional.of(parecer));
+        when(parecerRepo.save(any(Parecer.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(processoService.atualizarStatusPorPareceres(1L)).thenReturn(processo);
+        doNothing().when(auditoria).registrar(any(), any(), any());
+
+        mvc.perform(post("/avaliador/1/votar")
+                .with(csrf())
+                .param("resultado", "FAVORAVEL")
+                .param("justificativa", "  Quadro clinico compativel  "))
+            .andExpect(status().is3xxRedirection());
+
+        // Justificativa salva com trim aplicado
+        verify(parecerRepo).save(argThat(p ->
+            "Quadro clinico compativel".equals(p.getJustificativa())));
+    }
+
+    @Test
+    @WithMockUser(username = "avaliador1", roles = "AVALIADOR")
+    void registrarVotoJustificativaVaziaViraNull() throws Exception {
+        when(usuarioRepo.findByUsername("avaliador1")).thenReturn(Optional.of(usuario));
+        when(parecerRepo.findByProcessoIdAndMembroId(1L, 10L)).thenReturn(Optional.of(parecer));
+        when(parecerRepo.save(any(Parecer.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(processoService.atualizarStatusPorPareceres(1L)).thenReturn(processo);
+        doNothing().when(auditoria).registrar(any(), any(), any());
+
+        mvc.perform(post("/avaliador/1/votar")
+                .with(csrf())
+                .param("resultado", "NAO_FAVORAVEL")
+                .param("justificativa", "   "))
+            .andExpect(status().is3xxRedirection());
+
+        // Justificativa em branco nao deve ser persistida (null)
+        verify(parecerRepo).save(argThat(p -> p.getJustificativa() == null));
+    }
+
+    @Test
+    @WithMockUser(username = "avaliador1", roles = "AVALIADOR")
     void registrarVotoExibe403QuandoParecerJaEmitido() throws Exception {
         parecer.setResultado(ResultadoParecer.NAO_FAVORAVEL); // ja votou
         when(usuarioRepo.findByUsername("avaliador1")).thenReturn(Optional.of(usuario));

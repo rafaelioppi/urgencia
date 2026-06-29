@@ -92,6 +92,18 @@ public class RelatorioService {
                     Element.ALIGN_LEFT, false);
                 celula(t2, par.getDataResposta() != null ? par.getDataResposta().format(DATA) : "-",
                     Element.ALIGN_LEFT, false);
+                // Justificativa do avaliador (quando houver), em linha que ocupa as
+                // 3 colunas. Documento interno de encerramento — nunca visto pelos
+                // avaliadores, portanto pode constar aqui.
+                if (par.getJustificativa() != null && !par.getJustificativa().isBlank()) {
+                    PdfPCell cj = new PdfPCell(new Phrase(
+                        "Justificativa: " + par.getJustificativa(),
+                        FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, CINZA)));
+                    cj.setColspan(3);
+                    cj.setPadding(4);
+                    cj.setBorderColor(new Color(222, 226, 230));
+                    t2.addCell(cj);
+                }
             }
             doc.add(t2);
             Paragraph fav = new Paragraph(

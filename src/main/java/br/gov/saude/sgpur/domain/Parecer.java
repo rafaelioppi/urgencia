@@ -65,6 +65,15 @@ public class Parecer {
     @Column(name = "votado_por", length = 120)
     private String votadoPor;
 
+    /**
+     * Justificativa / observacoes clinicas que o avaliador digitou ao votar no
+     * portal. Material INTERNO do operador para subsidiar a decisao — NUNCA e
+     * exibida a outros avaliadores (imparcialidade do julgamento). Nula quando
+     * o medico nao escreveu nada.
+     */
+    @Column(name = "justificativa", columnDefinition = "TEXT")
+    private String justificativa;
+
     public Parecer() {
     }
 
@@ -155,5 +164,13 @@ public class Parecer {
 
     public void setVotadoPor(String votadoPor) {
         this.votadoPor = votadoPor;
+    }
+
+    public String getJustificativa() {
+        return justificativa;
+    }
+
+    public void setJustificativa(String justificativa) {
+        this.justificativa = justificativa;
     }
 }

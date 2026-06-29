@@ -406,7 +406,8 @@
                                 <th style="width: 140px">Resposta anexada</th>
                             </tr></thead>
                             <tbody>
-                            <tr th:each="par : ${processo.pareceres}">
+                            <th:block th:each="par : ${processo.pareceres}">
+                            <tr>
                                 <td th:text="${par.membro.rotulo}">Medico</td>
                                 <td>
                                     <input type="hidden" name="parecerId" th:value="${par.id}">
@@ -445,6 +446,19 @@
                                           th:text="${par.origem != null and par.origem.name() == 'AVALIADOR_SISTEMA'} ? 'Dispensado' : 'Nao'">Nao</span>
                                 </td>
                             </tr>
+                            <!-- Justificativa do avaliador (material INTERNO do operador;
+                                 NUNCA exibida a outros avaliadores no portal). -->
+                            <tr th:if="${par.justificativa != null and !par.justificativa.isBlank()}">
+                                <td colspan="5" class="pt-0">
+                                    <div class="alert alert-light border py-2 mb-0 small">
+                                        <i class="bi bi-chat-left-quote text-secondary"></i>
+                                        <span class="fw-semibold">Justificativa / observacoes do avaliador:</span>
+                                        <div class="text-body mt-1" style="white-space: pre-wrap"
+                                             th:text="${par.justificativa}">...</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </th:block>
                             </tbody>
                         </table>
                         <div class="text-end">
