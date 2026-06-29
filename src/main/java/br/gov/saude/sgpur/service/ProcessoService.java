@@ -137,6 +137,47 @@ public class ProcessoService {
     }
 
     /**
+     * Tenta aplicar a decisao automatica por maioria simples (2 de 3), se todas as
+     * pre-condicoes estiverem satisfeitas:
+     *   - Processo ainda em andamento (nao finalizado) e nao aguardando info;
+     *   - Maioria formada (>= 2 favoraveis ou >= 2 desfavoraveis);
+     *   - Nenhum parecer recebido sem o anexo comprobatorio (RESPOSTA_AVALIADOR /
+     *     ou origem AVALIADOR_SISTEMA que dispensa o anexo).
+     * Se todas as condicoes estiverem ok, chama {@link #decidir} e retorna o
+     * processo atualizado. Caso contrario retorna o processo sem alteracao.
+     * Deve ser chamado apos {@link #atualizarStatusPorPareceres} e apos
+     * {@link #retomarAposInformacao}.
+     */
+    @Transactional
+    public Processo tentarDecisaoAutomatica(Long id) {
+        Processo p = buscar(id);
+        if (p.getStatus().isFinalizado()) {
+            return p;
+        }
+        if (p.getStatus() == StatusProcesso.SOLICITA_INFORMACAO) {
+            return p;
+        }
+        Optional<StatusProcesso> sugestao = sugerirDecisao(p);
+        if (sugestao.isEmpty()) {
+            return p;
+        }
+        // So decide automaticamente se nao ha pareceres recebidos sem anexo
+        List<Parecer> semAnexo = pareceresRecebidosSemAnexo(p);
+        if (!semAnexo.isEmpty()) {
+            return p;
+        }
+        StatusProcesso decisao = sugestao.get();
+        // Decisao automatica nao requer motivo de indeferimento (sera preenchido
+        // manualmente na aba Finalizacao se necessario — mas exigimos o motivo
+        // para gravar a decisao). Para INDEFERIDO automatico, deixamos em branco
+        // e o operador completa depois; porem o servico decidir() nao valida o
+        // motivo — so o controller valida. Aqui chamamos direto no servico.
+        p.setStatus(decisao);
+        p.setDataDecisao(java.time.LocalDateTime.now());
+        return processoRepository.save(p);
+    }
+
+    /**
      * Retoma a analise apos a chegada da informacao complementar do solicitante:
      * tira o processo de SOLICITA_INFORMACAO e o devolve para ENVIADO (fluxo de
      * Respostas/Decisao), para que o(s) avaliador(es) concluam o voto. Limpa o

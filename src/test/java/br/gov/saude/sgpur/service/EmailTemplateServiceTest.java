@@ -24,7 +24,9 @@ class EmailTemplateServiceTest {
 
     @Test
     void emailAosMedicosNaoExpoeDadosDoPaciente() {
-        EmailTemplate medicos = service.gerar(processo()).stream()
+        Processo p = processo();
+        p.getPareceres().forEach(par -> par.setDataEnvio(LocalDate.now()));
+        EmailTemplate medicos = service.gerar(p).stream()
             .filter(e -> e.chave().equals("medicos")).findFirst().orElseThrow();
 
         // Imparcialidade: nome e RGCT do paciente NAO podem aparecer no e-mail aos avaliadores
@@ -68,6 +70,7 @@ class EmailTemplateServiceTest {
     @Test
     void emAnaliseNaoGeraEmailDeResposta() {
         Processo p = processo(); // EM_ANALISE por padrao
+        p.getPareceres().forEach(par -> par.setDataEnvio(LocalDate.now()));
         long respostas = service.gerar(p).stream()
             .filter(e -> e.chave().equals("deferido") || e.chave().equals("indeferido")).count();
         assertThat(respostas).isZero();

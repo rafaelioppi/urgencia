@@ -159,12 +159,22 @@ public class FluxoProcessoService {
             anterioresConcluidas = anterioresConcluidas && comprovanteOk;
         }
 
-        // 6. Resposta ao solicitante
-        boolean respostaOk = p.isEmailEnviadoSolicitante();
+        // 6. Resposta ao solicitante — exige o flag de e-mail enviado E o
+        //    comprovante de envio (print/PDF do e-mail) anexado ao processo.
+        boolean emailMarcado = p.isEmailEnviadoSolicitante();
+        boolean temComprovanteEnvio = temAnexo(p, TipoAnexo.COMPROVANTE_ENVIO_SOLICITANTE);
+        boolean respostaOk = emailMarcado && temComprovanteEnvio;
+        String detResposta;
+        if (respostaOk) {
+            detResposta = "Resposta enviada ao solicitante e comprovante anexado.";
+        } else {
+            java.util.List<String> faltasResp = new java.util.ArrayList<>();
+            if (!emailMarcado) faltasResp.add("marcar e-mail como enviado");
+            if (!temComprovanteEnvio) faltasResp.add("anexar comprovante de envio (print/PDF do e-mail)");
+            detResposta = "Falta: " + String.join(", ", faltasResp) + ".";
+        }
         etapas.add(montar("Resposta ao solicitante", "envelope-check-fill",
-            respostaOk, anterioresConcluidas,
-            respostaOk ? "Resposta enviada ao solicitante."
-                       : "Envie a resposta ao solicitante e marque como enviada."));
+            respostaOk, anterioresConcluidas, detResposta));
 
         return etapas;
     }

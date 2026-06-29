@@ -17,6 +17,7 @@ public enum TipoAnexo {
     OFICIO_INDEFERIMENTO("Oficio de indeferimento"),
     COMPROVANTE_SNT("Comprovante de insercao da urgencia renal no SNT"),
     EMAIL_RESPOSTA_SOLICITANTE("Copia do e-mail de resposta ao solicitante"),
+    COMPROVANTE_ENVIO_SOLICITANTE("Comprovante de envio da resposta ao solicitante (print/PDF do e-mail)"),
     RELATORIO_FINAL("Relatorio final do processo"),
     OUTRO("Outro");
 

@@ -5,6 +5,7 @@ import br.gov.saude.sgpur.repository.AnexoRepository;
 import br.gov.saude.sgpur.repository.ParecerRepository;
 import br.gov.saude.sgpur.repository.UsuarioRepository;
 import br.gov.saude.sgpur.service.AuditoriaService;
+import br.gov.saude.sgpur.service.DecisaoFinalService;
 import br.gov.saude.sgpur.service.Iniciais;
 import br.gov.saude.sgpur.service.ProcessoService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,17 +42,20 @@ public class AvaliadorController {
     private final AnexoRepository anexoRepo;
     private final ProcessoService processoService;
     private final AuditoriaService auditoria;
+    private final DecisaoFinalService decisaoFinalService;
 
     public AvaliadorController(UsuarioRepository usuarioRepo,
                                ParecerRepository parecerRepo,
                                AnexoRepository anexoRepo,
                                ProcessoService processoService,
-                               AuditoriaService auditoria) {
+                               AuditoriaService auditoria,
+                               DecisaoFinalService decisaoFinalService) {
         this.usuarioRepo = usuarioRepo;
         this.parecerRepo = parecerRepo;
         this.anexoRepo = anexoRepo;
         this.processoService = processoService;
         this.auditoria = auditoria;
+        this.decisaoFinalService = decisaoFinalService;
     }
 
     /**
@@ -186,6 +190,19 @@ public class AvaliadorController {
 
         // Atualiza o status do processo (pode ir para SOLICITA_INFORMACAO)
         processoService.atualizarStatusPorPareceres(processoId);
+
+        // Decisao automatica: se a maioria foi atingida e nao ha pareceres sem
+        // anexo pendentes (AVALIADOR_SISTEMA dispensa o anexo), decide imediatamente.
+        Processo pDecidido = processoService.tentarDecisaoAutomatica(processoId);
+        if (pDecidido.getStatus().isFinalizado()) {
+            try { decisaoFinalService.gerarDocumentos(pDecidido); }
+            catch (IllegalStateException e) {
+                // PDF falhou mas a decisao ja foi gravada — apenas loga o aviso.
+            }
+            auditoria.registrar("PROCESSO_DECIDIDO",
+                "Processo " + pDecidido.getNumero() + " - decisao automatica portal: "
+                + pDecidido.getStatus().getDescricao());
+        }
 
         String ip = request.getRemoteAddr();
         auditoria.registrar("PARECER_VOTADO",

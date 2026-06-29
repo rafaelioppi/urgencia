@@ -4,23 +4,40 @@ import br.gov.saude.sgpur.domain.Anexo;
 import br.gov.saude.sgpur.domain.Parecer;
 import br.gov.saude.sgpur.domain.Processo;
 import br.gov.saude.sgpur.domain.StatusProcesso;
+import br.gov.saude.sgpur.domain.TipoAnexo;
 import com.lowagie.text.*;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Gera o Relatorio Final do Processo de Urgencia Renal em PDF - documento
  * oficial para arquivamento, impressao e auditoria.
+ *
+ * O relatorio final eh composto por:
+ *   1. Capa + sumario executivo (dados do processo, pareceres, decisao,
+ *      andamento e relacao de anexos);
+ *   2. Copia integral de todos os documentos anexados ao processo (PDFs),
+ *      inseridos como paginas apos o sumario;
+ *   3. Pagina informativa para anexos nao-PDF.
+ * Todas as paginas recebem cabecalho padrao e numeracao.
  */
 @Service
 public class RelatorioService {
+
+    private static final Logger log = LoggerFactory.getLogger(RelatorioService.class);
 
     private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -32,162 +49,351 @@ public class RelatorioService {
 
     private final FluxoProcessoService fluxoService;
     private final ProcessoService processoService;
+    private final AnexoStorageService anexoStorage;
 
-    public RelatorioService(FluxoProcessoService fluxoService, ProcessoService processoService) {
+    public RelatorioService(FluxoProcessoService fluxoService,
+                            ProcessoService processoService,
+                            AnexoStorageService anexoStorage) {
         this.fluxoService = fluxoService;
         this.processoService = processoService;
+        this.anexoStorage = anexoStorage;
     }
 
+    /**
+     * Gera o Relatorio Final completo: sumario + copia de todos os anexos +
+     * cabecalho e numeracao em todas as paginas.
+     */
     public byte[] gerar(Processo p) {
-        Document doc = new Document(PageSize.A4, 40, 40, 50, 40);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            PdfWriter.getInstance(doc, out);
-            doc.open();
+            // 1. Gera o sumario executivo (capa + dados + pareceres + decisao + anexos)
+            byte[] summary = gerarSummary(p);
 
-            Font fTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15, AZUL);
-            Font fSub = FontFactory.getFont(FontFactory.HELVETICA, 9, CINZA);
-            Font fSecao = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
+            // 2. Coleta os PDFs anexados (exceto RELATORIO_FINAL — evitar ciclo)
+            List<Anexo> pdfs = p.getAnexos().stream()
+                .filter(a -> a.getTipo() != TipoAnexo.RELATORIO_FINAL)
+                .filter(a -> a.getContentType() != null
+                    && a.getContentType().toLowerCase().contains("pdf"))
+                .sorted(Comparator.comparing(Anexo::getDataUpload))
+                .toList();
 
-            // --- Pagina de capa ---
-            adicionarCapa(doc, p, "RELATORIO FINAL DE PROCESSO", false);
-            doc.newPage();
+            // 3. Coleta anexos nao-PDF (para pagina informativa)
+            List<Anexo> naoPdf = p.getAnexos().stream()
+                .filter(a -> a.getTipo() != TipoAnexo.RELATORIO_FINAL)
+                .filter(a -> a.getContentType() == null
+                    || !a.getContentType().toLowerCase().contains("pdf"))
+                .sorted(Comparator.comparing(Anexo::getDataUpload))
+                .toList();
 
-            // Cabecalho
-            Paragraph titulo = new Paragraph("RELATORIO FINAL - PROCESSO DE URGENCIA RENAL", fTitulo);
-            titulo.setAlignment(Element.ALIGN_CENTER);
-            doc.add(titulo);
+            // 4. Monta o PDF final com todas as paginas
+            byte[] merged = mergeComAnexos(summary, pdfs, naoPdf, p);
 
-            Paragraph sub = new Paragraph(
-                p.identificacao() + "  |  Situacao: " + p.getStatus().getDescricao()
-                    + "  |  Emitido em " + java.time.LocalDateTime.now().format(DATA_HORA), fSub);
-            sub.setAlignment(Element.ALIGN_CENTER);
-            sub.setSpacingAfter(14);
-            doc.add(sub);
+            // 5. Adiciona cabecalho e numeracao em todas as paginas
+            return estamparCabecalhoNumeracao(merged, p);
 
-            // Dados da solicitacao
-            secao(doc, fSecao, "1. Dados da solicitacao");
-            PdfPTable t1 = tabelaDados();
-            linha(t1, "Numero do processo", p.getNumero());
-            linha(t1, "Paciente (receptor)", p.getPacienteNome());
-            linha(t1, "RGCT / SNT", nvl(p.getPacienteRgct()));
-            linha(t1, "Equipe solicitante", p.getSolicitanteEquipe());
-            linha(t1, "E-mail do solicitante", nvl(p.getSolicitanteEmail()));
-            linha(t1, "Data da situacao especial",
-                p.getDataSituacaoEspecial() != null ? p.getDataSituacaoEspecial().format(DATA) : "-");
-            linha(t1, "Data de cadastro",
-                p.getDataCadastro() != null ? p.getDataCadastro().format(DATA_HORA) : "-");
-            linha(t1, "Observacoes", nvl(p.getObservacoes()));
-            doc.add(t1);
-
-            // Pareceres
-            secao(doc, fSecao, "2. Pareceres dos medicos (Urgencia Renal)");
-            PdfPTable t2 = new PdfPTable(new float[]{4, 2, 2});
-            t2.setWidthPercentage(100);
-            t2.setSpacingBefore(4);
-            cabecalho(t2, "Medico", "Parecer", "Data da resposta");
-            for (Parecer par : p.getPareceres()) {
-                celula(t2, par.getMembro().getRotulo(), Element.ALIGN_LEFT, false);
-                celula(t2, par.getResultado() != null ? par.getResultado().getDescricao() : "Pendente",
-                    Element.ALIGN_LEFT, false);
-                celula(t2, par.getDataResposta() != null ? par.getDataResposta().format(DATA) : "-",
-                    Element.ALIGN_LEFT, false);
-                // Justificativa do avaliador (quando houver), em linha que ocupa as
-                // 3 colunas. Documento interno de encerramento — nunca visto pelos
-                // avaliadores, portanto pode constar aqui.
-                if (par.getJustificativa() != null && !par.getJustificativa().isBlank()) {
-                    PdfPCell cj = new PdfPCell(new Phrase(
-                        "Justificativa: " + par.getJustificativa(),
-                        FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, CINZA)));
-                    cj.setColspan(3);
-                    cj.setPadding(4);
-                    cj.setBorderColor(new Color(222, 226, 230));
-                    t2.addCell(cj);
-                }
-            }
-            doc.add(t2);
-            Paragraph fav = new Paragraph(
-                "Favoraveis: " + processoService.contarFavoraveis(p) + " (regra: "
-                    + ProcessoService.FAVORAVEIS_PARA_DEFERIR + " de "
-                    + ProcessoService.AVALIADORES_POR_PROCESSO + " defere o processo).",
-                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, CINZA));
-            fav.setSpacingBefore(4);
-            doc.add(fav);
-
-            // Decisao
-            secao(doc, fSecao, "3. Decisao final");
-            PdfPTable t3 = tabelaDados();
-            linha(t3, "Resultado", p.getStatus().getDescricao());
-            linha(t3, "Data da decisao",
-                p.getDataDecisao() != null ? p.getDataDecisao().format(DATA_HORA) : "-");
-            linha(t3, "Motivo do indeferimento", nvl(p.getMotivoIndeferimento()));
-            linha(t3, "Data de emissao do oficio",
-                p.getDataEmissaoOficio() != null ? p.getDataEmissaoOficio().format(DATA) : "-");
-            linha(t3, "Data de envio do oficio",
-                p.getDataEnvioOficio() != null ? p.getDataEnvioOficio().format(DATA) : "-");
-            linha(t3, "E-mail enviado ao solicitante", p.isEmailEnviadoSolicitante() ? "Sim" : "Nao");
-            doc.add(t3);
-
-            // Andamento (etapas)
-            secao(doc, fSecao, "4. Andamento do processo");
-            PdfPTable t4 = new PdfPTable(new float[]{1, 4, 5});
-            t4.setWidthPercentage(100);
-            t4.setSpacingBefore(4);
-            cabecalho(t4, "Status", "Etapa", "Detalhe");
-            for (EtapaFluxo e : fluxoService.montarEtapas(p)) {
-                String marca = switch (e.estado()) {
-                    case CONCLUIDA -> "[X]";
-                    case ATUAL -> "[>]";
-                    case PENDENTE -> "[ ]";
-                };
-                celula(t4, marca, Element.ALIGN_CENTER, false);
-                celula(t4, e.titulo(), Element.ALIGN_LEFT, false);
-                celula(t4, e.detalhe(), Element.ALIGN_LEFT, false);
-            }
-            doc.add(t4);
-
-            // Anexos
-            secao(doc, fSecao, "5. Relacao de anexos");
-            if (p.getAnexos().isEmpty()) {
-                doc.add(new Paragraph("Nenhum anexo registrado.",
-                    FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, CINZA)));
-            } else {
-                PdfPTable t5 = new PdfPTable(new float[]{3, 4, 2});
-                t5.setWidthPercentage(100);
-                t5.setSpacingBefore(4);
-                cabecalho(t5, "Tipo", "Arquivo", "Data");
-                for (Anexo a : p.getAnexos()) {
-                    celula(t5, a.getTipo().getDescricao(), Element.ALIGN_LEFT, false);
-                    celula(t5, a.getNomeArquivo(), Element.ALIGN_LEFT, false);
-                    celula(t5, a.getDataUpload() != null ? a.getDataUpload().format(DATA) : "-",
-                        Element.ALIGN_LEFT, false);
-                }
-                doc.add(t5);
-            }
-
-            Paragraph rodape = new Paragraph(
-                "Documento gerado automaticamente pelo SGPUR - Sistema de Gestao de Processos de Urgencia Renal.",
-                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, CINZA));
-            rodape.setAlignment(Element.ALIGN_CENTER);
-            rodape.setSpacingBefore(20);
-            doc.add(rodape);
-
-            doc.close();
-            return out.toByteArray();
-        } catch (DocumentException e) {
-            throw new IllegalStateException("Falha ao gerar o relatorio PDF", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Falha ao gerar o relatorio PDF completo", e);
         }
     }
 
     // -----------------------------------------------------------------------
-    // Capa do relatorio
+    // 1. Sumario executivo
     // -----------------------------------------------------------------------
 
-    /**
-     * Gera, como PDF de uma pagina, a CAPA do processo com os dados do
-     * solicitante e os medicos avaliadores (passo 1 do fluxo). Reaproveita o
-     * layout da capa do Relatorio Final.
-     */
+    private byte[] gerarSummary(Processo p) throws DocumentException {
+        Document doc = new Document(PageSize.A4, 40, 40, 50, 40);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PdfWriter.getInstance(doc, out);
+        doc.open();
+
+        Font fTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15, AZUL);
+        Font fSub = FontFactory.getFont(FontFactory.HELVETICA, 9, CINZA);
+        Font fSecao = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
+
+        // Pagina de capa
+        adicionarCapa(doc, p, "RELATORIO FINAL DE PROCESSO", false);
+        doc.newPage();
+
+        Paragraph titulo = new Paragraph("RELATORIO FINAL - PROCESSO DE URGENCIA RENAL", fTitulo);
+        titulo.setAlignment(Element.ALIGN_CENTER);
+        doc.add(titulo);
+
+        Paragraph sub = new Paragraph(
+            p.identificacao() + "  |  Situacao: " + p.getStatus().getDescricao()
+                + "  |  Emitido em " + java.time.LocalDateTime.now().format(DATA_HORA), fSub);
+        sub.setAlignment(Element.ALIGN_CENTER);
+        sub.setSpacingAfter(14);
+        doc.add(sub);
+
+        secao(doc, fSecao, "1. Dados da solicitacao");
+        PdfPTable t1 = tabelaDados();
+        linha(t1, "Numero do processo", p.getNumero());
+        linha(t1, "Paciente (receptor)", p.getPacienteNome());
+        linha(t1, "RGCT / SNT", nvl(p.getPacienteRgct()));
+        linha(t1, "Equipe solicitante", p.getSolicitanteEquipe());
+        linha(t1, "E-mail do solicitante", nvl(p.getSolicitanteEmail()));
+        linha(t1, "Data da situacao especial",
+            p.getDataSituacaoEspecial() != null ? p.getDataSituacaoEspecial().format(DATA) : "-");
+        linha(t1, "Data de cadastro",
+            p.getDataCadastro() != null ? p.getDataCadastro().format(DATA_HORA) : "-");
+        linha(t1, "Observacoes", nvl(p.getObservacoes()));
+        doc.add(t1);
+
+        secao(doc, fSecao, "2. Pareceres dos medicos (Urgencia Renal)");
+        PdfPTable t2 = new PdfPTable(new float[]{4, 2, 2});
+        t2.setWidthPercentage(100);
+        t2.setSpacingBefore(4);
+        cabecalho(t2, "Medico", "Parecer", "Data da resposta");
+        for (Parecer par : p.getPareceres()) {
+            celula(t2, par.getMembro().getRotulo(), Element.ALIGN_LEFT, false);
+            celula(t2, par.getResultado() != null ? par.getResultado().getDescricao() : "Pendente",
+                Element.ALIGN_LEFT, false);
+            celula(t2, par.getDataResposta() != null ? par.getDataResposta().format(DATA) : "-",
+                Element.ALIGN_LEFT, false);
+            if (par.getJustificativa() != null && !par.getJustificativa().isBlank()) {
+                PdfPCell cj = new PdfPCell(new Phrase(
+                    "Justificativa: " + par.getJustificativa(),
+                    FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, CINZA)));
+                cj.setColspan(3);
+                cj.setPadding(4);
+                cj.setBorderColor(new Color(222, 226, 230));
+                t2.addCell(cj);
+            }
+        }
+        doc.add(t2);
+        Paragraph fav = new Paragraph(
+            "Favoraveis: " + processoService.contarFavoraveis(p) + " (regra: "
+                + ProcessoService.FAVORAVEIS_PARA_DEFERIR + " de "
+                + ProcessoService.AVALIADORES_POR_PROCESSO + " defere o processo).",
+            FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, CINZA));
+        fav.setSpacingBefore(4);
+        doc.add(fav);
+
+        secao(doc, fSecao, "3. Decisao final");
+        PdfPTable t3 = tabelaDados();
+        linha(t3, "Resultado", p.getStatus().getDescricao());
+        linha(t3, "Data da decisao",
+            p.getDataDecisao() != null ? p.getDataDecisao().format(DATA_HORA) : "-");
+        linha(t3, "Motivo do indeferimento", nvl(p.getMotivoIndeferimento()));
+        linha(t3, "Data de emissao do oficio",
+            p.getDataEmissaoOficio() != null ? p.getDataEmissaoOficio().format(DATA) : "-");
+        linha(t3, "Data de envio do oficio",
+            p.getDataEnvioOficio() != null ? p.getDataEnvioOficio().format(DATA) : "-");
+        linha(t3, "E-mail enviado ao solicitante", p.isEmailEnviadoSolicitante() ? "Sim" : "Nao");
+        doc.add(t3);
+
+        secao(doc, fSecao, "4. Andamento do processo");
+        PdfPTable t4 = new PdfPTable(new float[]{1, 4, 5});
+        t4.setWidthPercentage(100);
+        t4.setSpacingBefore(4);
+        cabecalho(t4, "Status", "Etapa", "Detalhe");
+        for (EtapaFluxo e : fluxoService.montarEtapas(p)) {
+            String marca = switch (e.estado()) {
+                case CONCLUIDA -> "[X]";
+                case ATUAL -> "[>]";
+                case PENDENTE -> "[ ]";
+            };
+            celula(t4, marca, Element.ALIGN_CENTER, false);
+            celula(t4, e.titulo(), Element.ALIGN_LEFT, false);
+            celula(t4, e.detalhe(), Element.ALIGN_LEFT, false);
+        }
+        doc.add(t4);
+
+        secao(doc, fSecao, "5. Relacao de anexos");
+        if (p.getAnexos().isEmpty()) {
+            doc.add(new Paragraph("Nenhum anexo registrado.",
+                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, CINZA)));
+        } else {
+            PdfPTable t5 = new PdfPTable(new float[]{3, 4, 2});
+            t5.setWidthPercentage(100);
+            t5.setSpacingBefore(4);
+            cabecalho(t5, "Tipo", "Arquivo", "Data");
+            for (Anexo a : p.getAnexos()) {
+                celula(t5, a.getTipo().getDescricao(), Element.ALIGN_LEFT, false);
+                celula(t5, a.getNomeArquivo(), Element.ALIGN_LEFT, false);
+                celula(t5, a.getDataUpload() != null ? a.getDataUpload().format(DATA) : "-",
+                    Element.ALIGN_LEFT, false);
+            }
+            doc.add(t5);
+        }
+
+        Paragraph rodape = new Paragraph(
+            "Documento gerado automaticamente pelo SGPUR - Sistema de Gestao de Processos de Urgencia Renal.",
+            FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, CINZA));
+        rodape.setAlignment(Element.ALIGN_CENTER);
+        rodape.setSpacingBefore(20);
+        doc.add(rodape);
+
+        doc.close();
+        return out.toByteArray();
+    }
+
+    // -----------------------------------------------------------------------
+    // 2. Merge com anexos
+    // -----------------------------------------------------------------------
+
+    private byte[] mergeComAnexos(byte[] summary, List<Anexo> pdfs,
+                                  List<Anexo> naoPdf, Processo p)
+            throws DocumentException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Document doc = new Document();
+        PdfCopy copier = new PdfCopy(doc, baos);
+        doc.open();
+
+        // Importa paginas do sumario
+        PdfReader summaryReader = new PdfReader(summary);
+        for (int i = 1; i <= summaryReader.getNumberOfPages(); i++) {
+            copier.addPage(copier.getImportedPage(summaryReader, i));
+        }
+        summaryReader.close();
+
+        // Importa cada PDF anexado
+        for (Anexo a : pdfs) {
+            Path path = anexoStorage.resolverArquivo(a);
+            if (!Files.exists(path)) {
+                log.warn("Anexo PDF nao encontrado no disco: {} ({})", a.getNomeArquivo(), path);
+                adicionarPaginaAviso(copier,
+                    "Anexo nao encontrado: " + a.getNomeArquivo(),
+                    "O arquivo \"" + a.getNomeArquivo()
+                        + "\" (" + a.getTipo().getDescricao()
+                        + ") nao foi localizado no disco.");
+                continue;
+            }
+            try {
+                PdfReader reader = new PdfReader(Files.readAllBytes(path));
+                for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+                    copier.addPage(copier.getImportedPage(reader, i));
+                }
+                reader.close();
+            } catch (Exception e) {
+                log.error("Erro ao importar anexo PDF {}: {}", a.getNomeArquivo(), e.getMessage());
+                adicionarPaginaAviso(copier,
+                    "Erro ao importar: " + a.getNomeArquivo(),
+                    "Nao foi possivel importar \"" + a.getNomeArquivo()
+                        + "\" (" + a.getTipo().getDescricao()
+                        + "): " + e.getMessage());
+            }
+        }
+
+        // Paginas informativas para anexos nao-PDF
+        for (Anexo a : naoPdf) {
+            adicionarPaginaAviso(copier,
+                "Anexo (formato nao-PDF): " + a.getNomeArquivo(),
+                "Tipo: " + a.getTipo().getDescricao()
+                    + "\nArquivo: " + a.getNomeArquivo()
+                    + "\nFormato: " + (a.getContentType() != null ? a.getContentType() : "desconhecido")
+                    + "\nData: " + (a.getDataUpload() != null ? a.getDataUpload().format(DATA) : "-")
+                    + "\n\nEste anexo esta disponivel para download na pagina do processo.");
+        }
+
+        doc.close();
+        return baos.toByteArray();
+    }
+
+    private void adicionarPaginaAviso(PdfCopy copier, String titulo, String corpo)
+            throws DocumentException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Document d = new Document(PageSize.A4, 40, 40, 50, 40);
+        PdfWriter.getInstance(d, baos);
+        d.open();
+        Paragraph pTitulo = new Paragraph(titulo,
+            FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, CINZA));
+        pTitulo.setSpacingAfter(20);
+        d.add(pTitulo);
+        Paragraph pCorpo = new Paragraph(corpo,
+            FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK));
+        d.add(pCorpo);
+        d.close();
+
+        PdfReader reader = new PdfReader(baos.toByteArray());
+        copier.addPage(copier.getImportedPage(reader, 1));
+        reader.close();
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. Cabecalho e numeracao
+    // -----------------------------------------------------------------------
+
+    private byte[] estamparCabecalhoNumeracao(byte[] pdf, Processo p)
+            throws DocumentException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfReader reader = new PdfReader(pdf);
+        PdfStamper stamper = new PdfStamper(reader, baos);
+
+        // Carrega o logo do RS
+        Image logo = null;
+        try {
+            byte[] logoBytes = getClass().getClassLoader()
+                .getResourceAsStream("static/brasao.png").readAllBytes();
+            logo = Image.getInstance(logoBytes);
+            float logoAlt = 22;
+            logo.scaleToFit(logoAlt * 1.2f, logoAlt);
+        } catch (Exception e) {
+            log.warn("Logo nao encontrado em static/brasao.png, cabecalho sem imagem");
+        }
+
+        String linha1 = "GOVERNO DO ESTADO DO RIO GRANDE DO SUL - URGENCIA RENAL";
+        String iniciais = Iniciais.de(p.getPacienteNome());
+        String linha2 = "Processo CET-RS " + p.getNumero() + " - Paciente " + iniciais;
+
+        BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+        float margemEsq = 40;
+        float margemDir = 40;
+        float topo = PageSize.A4.getHeight();
+        float largUtil = PageSize.A4.getWidth() - margemEsq - margemDir;
+        int totalPaginas = reader.getNumberOfPages();
+
+        for (int i = 1; i <= totalPaginas; i++) {
+            PdfContentByte over = stamper.getOverContent(i);
+
+            float logoX = margemEsq;
+            float logoY = topo - 30;
+
+            // Logo do RS (canto superior esquerdo)
+            if (logo != null) {
+                Image img = Image.getInstance(logo);
+                img.setAbsolutePosition(logoX, logoY);
+                img.scaleToFit(22, 22);
+                over.addImage(img);
+            }
+
+            // Texto do cabecalho (a direita do logo)
+            float textoX = margemEsq + 30;
+            float textoLarg = largUtil - 30;
+
+            over.beginText();
+            over.setFontAndSize(bf, 7);
+            over.showTextAligned(Element.ALIGN_CENTER, linha1,
+                textoX + textoLarg / 2, topo - 18, 0);
+            over.setFontAndSize(bf, 7);
+            over.showTextAligned(Element.ALIGN_CENTER, linha2,
+                textoX + textoLarg / 2, topo - 30, 0);
+            over.endText();
+
+            // Linha separadora fina abaixo do cabecalho
+            over.setLineWidth(0.4f);
+            over.setColorStroke(new Color(180, 180, 180));
+            over.moveTo(margemEsq, topo - 36);
+            over.lineTo(PageSize.A4.getWidth() - margemDir, topo - 36);
+            over.stroke();
+
+            // Numeracao (canto inferior direito)
+            over.beginText();
+            over.setFontAndSize(bf, 7);
+            over.showTextAligned(Element.ALIGN_RIGHT,
+                "Pagina " + i + " de " + totalPaginas,
+                PageSize.A4.getWidth() - margemDir, 22, 0);
+            over.endText();
+        }
+
+        stamper.close();
+        reader.close();
+        return baos.toByteArray();
+    }
+
+    // -----------------------------------------------------------------------
+    // Capa do relatorio / processo
+    // -----------------------------------------------------------------------
+
     public byte[] gerarCapaProcesso(Processo p) {
         Document doc = new Document(PageSize.A4, 40, 40, 50, 40);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -215,12 +421,10 @@ public class RelatorioService {
         Font fCelTabela = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK);
         Font fRodapeCapa = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, CINZA);
 
-        // Espacamento inicial para centralizar verticalmente o bloco principal
         Paragraph espaco = new Paragraph(" ");
         espaco.setSpacingAfter(60);
         doc.add(espaco);
 
-        // Cabecalho institucional
         Paragraph orgao = new Paragraph("GOVERNO DO ESTADO DO RIO GRANDE DO SUL", fOrgao);
         orgao.setAlignment(Element.ALIGN_CENTER);
         doc.add(orgao);
@@ -234,7 +438,6 @@ public class RelatorioService {
         urgencia.setSpacingAfter(40);
         doc.add(urgencia);
 
-        // Linha separadora
         PdfPTable separador = new PdfPTable(1);
         separador.setWidthPercentage(60);
         separador.setSpacingAfter(40);
@@ -248,13 +451,11 @@ public class RelatorioService {
         separador.addCell(linhaSep);
         doc.add(separador);
 
-        // Titulo do documento
         Paragraph tituloDoc = new Paragraph(tituloDocumento, fTituloDoc);
         tituloDoc.setAlignment(Element.ALIGN_CENTER);
         tituloDoc.setSpacingAfter(40);
         doc.add(tituloDoc);
 
-        // Tabela de dados principais (2 colunas: rotulo + valor)
         PdfPTable tDados = new PdfPTable(new float[]{3.5f, 6.5f});
         tDados.setWidthPercentage(80);
         tDados.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -264,7 +465,6 @@ public class RelatorioService {
         adicionarLinhaCapa(tDados, "Paciente:", nvl(p.getPacienteNome()), fRotulo, fValor);
         adicionarLinhaCapa(tDados, "RGCT / SNT:", nvl(p.getPacienteRgct()), fRotulo, fValor);
 
-        // Dados do solicitante (apenas na capa do processo - passo 1)
         if (incluirSolicitante) {
             adicionarLinhaCapa(tDados, "Equipe solicitante:", nvl(p.getSolicitanteEquipe()), fRotulo, fValor);
             adicionarLinhaCapa(tDados, "E-mail do solicitante:", nvl(p.getSolicitanteEmail()), fRotulo, fValor);
@@ -273,7 +473,6 @@ public class RelatorioService {
             adicionarLinhaCapa(tDados, "Data da situacao especial:", dataSit, fRotulo, fValor);
         }
 
-        // Data da decisao
         String dataDecisaoStr;
         if (p.getDataDecisao() != null) {
             dataDecisaoStr = p.getDataDecisao().format(DATA);
@@ -284,7 +483,6 @@ public class RelatorioService {
         }
         adicionarLinhaCapa(tDados, "Data da decisao:", dataDecisaoStr, fRotulo, fValor);
 
-        // Resultado em destaque (apenas se finalizado)
         if (p.getStatus().isFinalizado()) {
             String textoResultado;
             Color corResultado;
@@ -313,7 +511,6 @@ public class RelatorioService {
         }
         doc.add(tDados);
 
-        // Tabela de avaliadores
         Paragraph tituloAval = new Paragraph("MEDICOS AVALIADORES", fUrgencia);
         tituloAval.setAlignment(Element.ALIGN_CENTER);
         tituloAval.setSpacingAfter(6);
@@ -324,7 +521,6 @@ public class RelatorioService {
         tAval.setHorizontalAlignment(Element.ALIGN_CENTER);
         tAval.setSpacingAfter(30);
 
-        // Cabecalho da tabela de avaliadores
         for (String col : new String[]{"Nome", "Instituicao", "Parecer"}) {
             PdfPCell c = new PdfPCell(new Phrase(col, fCabTabela));
             c.setBackgroundColor(AZUL);
@@ -333,7 +529,6 @@ public class RelatorioService {
             tAval.addCell(c);
         }
 
-        // Linhas dos pareceres
         for (Parecer par : p.getPareceres()) {
             PdfPCell cNome = new PdfPCell(new Phrase(par.getMembro().getNome(), fCelTabela));
             PdfPCell cInst = new PdfPCell(new Phrase(par.getMembro().getInstituicao(), fCelTabela));
@@ -364,7 +559,6 @@ public class RelatorioService {
         }
         doc.add(tAval);
 
-        // Rodape da capa
         Paragraph rodapeCapa = new Paragraph(
             "Documento gerado pelo SGPUR em " + LocalDate.now().format(DATA), fRodapeCapa);
         rodapeCapa.setAlignment(Element.ALIGN_CENTER);
@@ -384,6 +578,8 @@ public class RelatorioService {
         t.addCell(c2);
     }
 
+    // -----------------------------------------------------------------------
+    // Helpers de layout
     // -----------------------------------------------------------------------
 
     private void secao(Document doc, Font fSecao, String texto) throws DocumentException {

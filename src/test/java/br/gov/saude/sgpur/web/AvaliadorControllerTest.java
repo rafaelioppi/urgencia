@@ -5,6 +5,7 @@ import br.gov.saude.sgpur.repository.AnexoRepository;
 import br.gov.saude.sgpur.repository.ParecerRepository;
 import br.gov.saude.sgpur.repository.UsuarioRepository;
 import br.gov.saude.sgpur.service.AuditoriaService;
+import br.gov.saude.sgpur.service.DecisaoFinalService;
 import br.gov.saude.sgpur.service.ProcessoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ class AvaliadorControllerTest {
     @MockBean private ParecerRepository parecerRepo;
     @MockBean private AnexoRepository anexoRepo;
     @MockBean private ProcessoService processoService;
+    @MockBean private DecisaoFinalService decisaoFinalService;
     @MockBean private AuditoriaService auditoria;
 
     private MembroUrgenciaRenal membro;
@@ -211,6 +213,7 @@ class AvaliadorControllerTest {
         when(parecerRepo.findByProcessoIdAndMembroId(1L, 10L)).thenReturn(Optional.of(parecer));
         when(parecerRepo.save(any(Parecer.class))).thenAnswer(inv -> inv.getArgument(0));
         when(processoService.atualizarStatusPorPareceres(1L)).thenReturn(processo);
+        when(processoService.tentarDecisaoAutomatica(1L)).thenReturn(processo);
         doNothing().when(auditoria).registrar(any(), any(), any());
 
         mvc.perform(post("/avaliador/1/votar")
@@ -239,6 +242,7 @@ class AvaliadorControllerTest {
         when(parecerRepo.findByProcessoIdAndMembroId(1L, 10L)).thenReturn(Optional.of(parecer));
         when(parecerRepo.save(any(Parecer.class))).thenAnswer(inv -> inv.getArgument(0));
         when(processoService.atualizarStatusPorPareceres(1L)).thenReturn(processo);
+        when(processoService.tentarDecisaoAutomatica(1L)).thenReturn(processo);
         doNothing().when(auditoria).registrar(any(), any(), any());
 
         mvc.perform(post("/avaliador/1/votar")
@@ -259,6 +263,7 @@ class AvaliadorControllerTest {
         when(parecerRepo.findByProcessoIdAndMembroId(1L, 10L)).thenReturn(Optional.of(parecer));
         when(parecerRepo.save(any(Parecer.class))).thenAnswer(inv -> inv.getArgument(0));
         when(processoService.atualizarStatusPorPareceres(1L)).thenReturn(processo);
+        when(processoService.tentarDecisaoAutomatica(1L)).thenReturn(processo);
         doNothing().when(auditoria).registrar(any(), any(), any());
 
         mvc.perform(post("/avaliador/1/votar")

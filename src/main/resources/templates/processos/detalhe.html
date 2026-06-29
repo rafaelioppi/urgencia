@@ -413,13 +413,19 @@
                                     <input type="hidden" name="parecerId" th:value="${par.id}">
                                     <!-- dataEnvio oculto para preservar o valor ao salvar pareceres -->
                                     <input type="hidden" name="dataEnvio" th:value="${par.dataEnvio}">
-                                    <select name="resultado" class="form-select form-select-sm">
+                                    <!-- Pareceres votados pelo portal sao IMUTAVEIS: operador nao pode alterar -->
+                                    <select name="resultado" class="form-select form-select-sm"
+                                            th:disabled="${pareceresPortal.contains(par.id)}"
+                                            th:title="${pareceresPortal.contains(par.id)} ? 'Voto registrado pelo avaliador no portal — imutavel pelo operador.' : null">
                                         <option value="">-- pendente --</option>
                                         <option th:each="r : ${resultadoValores}"
                                                 th:value="${r.name()}"
                                                 th:text="${r.descricao}"
                                                 th:selected="${par.resultado != null and par.resultado.name() == r.name()}"></option>
                                     </select>
+                                    <!-- Campo hidden para garantir que o valor do portal seja reenviado mesmo com select disabled -->
+                                    <input th:if="${pareceresPortal.contains(par.id) and par.resultado != null}"
+                                           type="hidden" name="resultado" th:value="${par.resultado.name()}">
                                 </td>
                                 <td class="small text-muted"
                                     th:text="${par.dataResposta != null} ? ${#temporals.format(par.dataResposta, 'dd/MM/yyyy')} : '-'">-</td>
@@ -471,7 +477,14 @@
                     <h6 class="text-muted small">Anexar e-mail de resposta por avaliador</h6>
                     <div th:each="par : ${processo.pareceres}" class="row g-2 align-items-end mb-2">
                         <div class="col-md-4 small fw-semibold" th:text="${par.membro.rotulo}">Medico</div>
-                        <form th:action="@{/processos/{id}/resposta-avaliador(id=${processo.id})}"
+                        <!-- Parecer votado pelo portal: o registro autenticado dispensa e protege o anexo -->
+                        <div th:if="${pareceresPortal.contains(par.id)}"
+                             class="col-md-8 small text-muted fst-italic">
+                            <i class="bi bi-shield-lock text-primary"></i>
+                            Voto registrado pelo avaliador no portal — anexo de resposta nao exigido nem substituivel.
+                        </div>
+                        <form th:unless="${pareceresPortal.contains(par.id)}"
+                              th:action="@{/processos/{id}/resposta-avaliador(id=${processo.id})}"
                               method="post" enctype="multipart/form-data"
                               class="col-md-8 d-flex gap-2 align-items-center">
                             <input type="hidden" name="parecerId" th:value="${par.id}">
@@ -525,11 +538,105 @@
                 <!-- ABA 5: Finalizacao -->
                 <div class="tab-pane fade" th:classappend="${abaFinal} ? 'show active' : ''"
                      id="pane-finalizacao" role="tabpanel" aria-labelledby="tab-finalizacao">
-            <!-- Finalizacao / oficio / resposta -->
+            <!-- Finalizacao / oficio / comprovante / resposta -->
             <div class="card mb-4" id="finalizacao">
                 <div class="card-header"><i class="bi bi-flag"></i> Finalizacao</div>
                 <div class="card-body">
-                    <form th:action="@{/processos/{id}/finalizacao(id=${processo.id})}" method="post">
+
+                    <!-- Oficio de Indeferimento (apenas INDEFERIDO) -->
+                    <div th:if="${processo.status.name() == 'INDEFERIDO'}" class="border rounded p-3 mb-3 bg-light">
+                        <h6 class="mb-2"><i class="bi bi-file-earmark-text text-danger"></i> Oficio de Indeferimento</h6>
+                        <div th:if="${oficioAnexo != null}" class="alert alert-success py-2 mb-2">
+                            <i class="bi bi-check-circle"></i>
+                            Oficio anexado:
+                            <a th:href="@{/processos/anexos/{id}/download(id=${oficioAnexo.id})}"
+                               th:text="${oficioAnexo.nomeArquivo}">arquivo</a>
+                            <span class="text-muted small ms-2"
+                                  th:text="${#temporals.format(oficioAnexo.dataUpload,'dd/MM/yyyy')}"></span>
+                        </div>
+                        <div th:unless="${oficioAnexo != null}" class="alert alert-warning py-2 mb-2">
+                            <i class="bi bi-exclamation-triangle"></i> Oficio ainda nao anexado.
+                            O sistema gera automaticamente ao indeferir — ou faca upload manual abaixo.
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small">Data emissao do oficio</label>
+                                <form th:action="@{/processos/{id}/finalizacao(id=${processo.id})}" method="post" id="formDatasOficio">
+                                    <input type="date" name="dataEmissaoOficio" class="form-control form-control-sm"
+                                           th:value="${processo.dataEmissaoOficio}"
+                                           form="formDatasOficio">
+                                </form>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Data envio do oficio</label>
+                                <input type="date" name="dataEnvioOficio" class="form-control form-control-sm"
+                                       th:value="${processo.dataEnvioOficio}"
+                                       form="formDatasOficio">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-outline-secondary btn-sm" form="formDatasOficio">
+                                    <i class="bi bi-save"></i> Salvar datas
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Upload manual do oficio -->
+                        <form th:action="@{/processos/{id}/oficio-upload(id=${processo.id})}" method="post"
+                              enctype="multipart/form-data" class="row g-2 align-items-end mt-2">
+                            <div class="col-md-8">
+                                <label class="form-label small">
+                                    <span th:if="${oficioAnexo != null}">Substituir oficio (PDF)</span>
+                                    <span th:unless="${oficioAnexo != null}">Anexar oficio manualmente (PDF)</span>
+                                </label>
+                                <input type="file" name="arquivo" class="form-control form-control-sm"
+                                       accept=".pdf" th:required="${oficioAnexo == null}">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-upload"></i> Enviar oficio
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Comprovante SNT (apenas DEFERIDO) -->
+                    <div th:if="${processo.status.name() == 'DEFERIDO'}" class="border rounded p-3 mb-3 bg-light">
+                        <h6 class="mb-2"><i class="bi bi-clipboard2-check text-success"></i> Comprovante SNT</h6>
+                        <p class="small text-muted mb-2">
+                            Anexe o comprovante de insercao da urgencia renal no
+                            Sistema Nacional de Transplantes (SNT). Obrigatorio para concluir o processo.
+                        </p>
+                        <div th:if="${comprovanteSnT != null}" class="alert alert-success py-2 mb-2">
+                            <i class="bi bi-check-circle"></i>
+                            Comprovante anexado:
+                            <a th:href="@{/processos/anexos/{id}/download(id=${comprovanteSnT.id})}"
+                               th:text="${comprovanteSnT.nomeArquivo}">arquivo</a>
+                            <span class="text-muted small ms-2"
+                                  th:text="${#temporals.format(comprovanteSnT.dataUpload,'dd/MM/yyyy')}"></span>
+                        </div>
+                        <div th:unless="${comprovanteSnT != null}" class="alert alert-warning py-2 mb-2">
+                            <i class="bi bi-exclamation-triangle"></i> Comprovante SNT ainda nao anexado.
+                        </div>
+                        <form th:action="@{/processos/{id}/comprovante-snt(id=${processo.id})}" method="post"
+                              enctype="multipart/form-data" class="row g-2 align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label small">
+                                    <span th:if="${comprovanteSnT != null}">Substituir comprovante SNT</span>
+                                    <span th:unless="${comprovanteSnT != null}">Anexar comprovante SNT</span>
+                                </label>
+                                <input type="file" name="arquivo" class="form-control form-control-sm"
+                                       accept=".pdf,.png,.jpg,.jpeg" th:required="${comprovanteSnT == null}">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-upload"></i> Enviar comprovante
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Dados gerais de finalizacao -->
+                    <form th:action="@{/processos/{id}/finalizacao(id=${processo.id})}" method="post"
+                          th:unless="${processo.status.name() == 'INDEFERIDO'}">
                         <div class="row g-2">
                             <div class="col-md-4">
                                 <label class="form-label">Data emissao do oficio</label>
@@ -554,6 +661,58 @@
                             <button class="btn btn-primary btn-sm">Salvar finalizacao</button>
                         </div>
                     </form>
+
+                    <!-- Resposta ao solicitante (sempre visivel na finalizacao) -->
+                    <div class="border rounded p-3 mt-3 bg-light">
+                        <h6 class="mb-2"><i class="bi bi-envelope-check text-primary"></i> Resposta ao solicitante</h6>
+
+                        <!-- Comprovante de envio (print/PDF do e-mail enviado) -->
+                        <div th:if="${comprovanteEnvioSolicitante != null}" class="alert alert-success py-2 mb-2">
+                            <i class="bi bi-check-circle"></i>
+                            Comprovante de envio anexado:
+                            <a th:href="@{/processos/anexos/{id}/download(id=${comprovanteEnvioSolicitante.id})}"
+                               th:text="${comprovanteEnvioSolicitante.nomeArquivo}">arquivo</a>
+                        </div>
+                        <div th:unless="${comprovanteEnvioSolicitante != null}" class="alert alert-warning py-2 mb-2">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Comprovante de envio ao solicitante ainda nao anexado (obrigatorio para concluir).
+                        </div>
+                        <form th:action="@{/processos/{id}/comprovante-envio-solicitante(id=${processo.id})}"
+                              method="post" enctype="multipart/form-data" class="row g-2 align-items-end mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label small">
+                                    <span th:if="${comprovanteEnvioSolicitante != null}">Substituir comprovante de envio</span>
+                                    <span th:unless="${comprovanteEnvioSolicitante != null}">Anexar comprovante de envio (print/PDF do e-mail)</span>
+                                </label>
+                                <input type="file" name="arquivo" class="form-control form-control-sm"
+                                       accept=".pdf,.png,.jpg,.jpeg,.eml,.msg"
+                                       th:required="${comprovanteEnvioSolicitante == null}">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-upload"></i> Enviar comprovante
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Checkbox de confirmacao -->
+                        <form th:action="@{/processos/{id}/finalizacao(id=${processo.id})}" method="post">
+                            <input type="hidden" name="dataEmissaoOficio" th:value="${processo.dataEmissaoOficio}">
+                            <input type="hidden" name="dataEnvioOficio" th:value="${processo.dataEnvioOficio}">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="emailEnviadoSolicitante" value="true"
+                                       class="form-check-input" id="emailEnv"
+                                       th:checked="${processo.emailEnviadoSolicitante}">
+                                <label class="form-check-label" for="emailEnv">
+                                    E-mail de resposta enviado ao solicitante
+                                </label>
+                            </div>
+                            <button class="btn btn-primary btn-sm">
+                                <i class="bi bi-save"></i> Salvar
+                            </button>
+                        </form>
+                    </div>
+
                 </div>
             </div>
                 </div><!-- /ABA 5 Finalizacao -->

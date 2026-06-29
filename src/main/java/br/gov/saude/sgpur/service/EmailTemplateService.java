@@ -42,7 +42,15 @@ public class EmailTemplateService {
         } else if (p.getStatus() == StatusProcesso.SOLICITA_INFORMACAO) {
             lista.add(emailSolicitaInfo(p));
         }
-        return lista;
+        // Filtra templates que so devem ser exibidos apos o envio aos medicos
+        // (dataEnvio registrada em ao menos um parecer). Templates com
+        // requerEnvio=false sao sempre exibidos.
+        boolean envioRealizado = p.getPareceres() != null
+            && !p.getPareceres().isEmpty()
+            && p.getPareceres().get(0).getDataEnvio() != null;
+        return lista.stream()
+            .filter(t -> !t.requerEnvio() || envioRealizado)
+            .toList();
     }
 
     /**
@@ -80,7 +88,8 @@ public class EmailTemplateService {
             """.formatted(idProcesso, data, medicos);
 
         return new EmailTemplate("medicos", "Envio aos medicos (parecer)", "send",
-            "Urgencia Renal - Solicitacao de parecer - Processo " + idProcesso, corpo);
+            "Urgencia Renal - Solicitacao de parecer - Processo " + idProcesso, corpo,
+            true); // so exibir apos dataEnvio registrada
     }
 
     /**
@@ -167,7 +176,8 @@ public class EmailTemplateService {
         return new EmailTemplate("convite-portal",
             "Convite ao Portal do Avaliador (votacao no sistema)", "person-check",
             "Urgencia Renal - Acesso ao Portal do Avaliador - Processo " + idProcesso,
-            corpo);
+            corpo,
+            true); // so exibir apos dataEnvio registrada
     }
 
     /**

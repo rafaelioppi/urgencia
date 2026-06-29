@@ -5,6 +5,7 @@ import br.gov.saude.sgpur.repository.MembroUrgenciaRenalRepository;
 import br.gov.saude.sgpur.repository.ParecerRepository;
 import br.gov.saude.sgpur.service.AnexoStorageService;
 import br.gov.saude.sgpur.service.AuditoriaService;
+import br.gov.saude.sgpur.service.DecisaoFinalService;
 import br.gov.saude.sgpur.service.EmailTemplateService;
 import br.gov.saude.sgpur.service.FluxoProcessoService;
 import br.gov.saude.sgpur.service.OficioService;
@@ -45,6 +46,7 @@ public class ProcessoController {
     private final ParecerRepository parecerRepository;
     private final AnexoStorageService anexoStorage;
     private final AuditoriaService auditoria;
+    private final DecisaoFinalService decisaoFinalService;
 
     public ProcessoController(ProcessoService processoService,
                               FluxoProcessoService fluxoService,
@@ -55,7 +57,8 @@ public class ProcessoController {
                               MembroUrgenciaRenalRepository membroRepository,
                               ParecerRepository parecerRepository,
                               AnexoStorageService anexoStorage,
-                              AuditoriaService auditoria) {
+                              AuditoriaService auditoria,
+                              DecisaoFinalService decisaoFinalService) {
         this.processoService = processoService;
         this.fluxoService = fluxoService;
         this.emailTemplateService = emailTemplateService;
@@ -66,6 +69,7 @@ public class ProcessoController {
         this.parecerRepository = parecerRepository;
         this.anexoStorage = anexoStorage;
         this.auditoria = auditoria;
+        this.decisaoFinalService = decisaoFinalService;
     }
 
     @ModelAttribute("statusValores")
@@ -191,6 +195,14 @@ public class ProcessoController {
             .map(a -> a.getParecer().getId())
             .collect(java.util.stream.Collectors.toSet());
         model.addAttribute("pareceresComResposta", pareceresComResposta);
+        // IDs dos pareceres votados diretamente pelo avaliador autenticado no portal.
+        // Esses pareceres sao IMUTAVEIS pelo operador: o campo de resultado fica
+        // bloqueado (disabled) e o anexo de resposta nao pode ser excluido nem substituido.
+        java.util.Set<Long> pareceresPortal = p.getPareceres().stream()
+            .filter(par -> par.getOrigem() == OrigemParecer.AVALIADOR_SISTEMA)
+            .map(Parecer::getId)
+            .collect(java.util.stream.Collectors.toSet());
+        model.addAttribute("pareceresPortal", pareceresPortal);
         // Anexo do tipo SOLICITACAO_AVALIADOR = copia anonimizada para as equipes
         Optional<Anexo> solicitacaoPdf = p.getAnexos().stream()
             .filter(a -> a.getTipo() == TipoAnexo.SOLICITACAO_AVALIADOR)
@@ -258,6 +270,20 @@ public class ProcessoController {
 
         // passoLiberado[i] = true se a aba do passo (1..5) pode ser aberta.
         // 1 Recebimento sempre liberado; cada passo seguinte exige o anterior pronto.
+        // Anexos da aba Finalizacao
+        Optional<Anexo> oficioAnexo = p.getAnexos().stream()
+            .filter(a -> a.getTipo() == TipoAnexo.OFICIO_INDEFERIMENTO)
+            .findFirst();
+        model.addAttribute("oficioAnexo", oficioAnexo.orElse(null));
+        Optional<Anexo> comprovanteSnT = p.getAnexos().stream()
+            .filter(a -> a.getTipo() == TipoAnexo.COMPROVANTE_SNT)
+            .findFirst();
+        model.addAttribute("comprovanteSnT", comprovanteSnT.orElse(null));
+        Optional<Anexo> comprovanteEnvioSolicitante = p.getAnexos().stream()
+            .filter(a -> a.getTipo() == TipoAnexo.COMPROVANTE_ENVIO_SOLICITANTE)
+            .findFirst();
+        model.addAttribute("comprovanteEnvioSolicitante", comprovanteEnvioSolicitante.orElse(null));
+
         boolean liberadoRecebimento = true;
         boolean liberadoEnvio = recebimentoFeito;
         boolean liberadoRespostas = recebimentoFeito && envioFeito;
@@ -337,6 +363,12 @@ public class ProcessoController {
                     .filter(par -> par.getId().equals(pid))
                     .findFirst()
                     .ifPresent(par -> {
+                        // Pareceres votados diretamente pelo avaliador no portal sao IMUTAVEIS:
+                        // o operador nao pode alterar o resultado (nao-repudio). Apenas a
+                        // dataEnvio pode ser preservada (e vem como hidden no form).
+                        if (par.getOrigem() == OrigemParecer.AVALIADOR_SISTEMA) {
+                            return; // ignora silenciosamente qualquer alteracao de resultado
+                        }
                         par.setDataEnvio((env == null || env.isBlank()) ? null : LocalDate.parse(env));
                         if (res == null || res.isBlank()) {
                             par.setResultado(null);
@@ -353,6 +385,17 @@ public class ProcessoController {
         // Etapa 6/7: se um medico pediu informacao (e ainda nao houve decisao),
         // o status passa a SOLICITA_INFORMACAO; senao permanece ENVIADO.
         processoService.atualizarStatusPorPareceres(id);
+        // Decisao automatica: se a maioria foi formada e as pre-condicoes
+        // (sem pareceres sem anexo) estiverem satisfeitas, decide imediatamente.
+        Processo pDecidido = processoService.tentarDecisaoAutomatica(id);
+        if (pDecidido.getStatus().isFinalizado()) {
+            // Gera automaticamente o Oficio (se indeferido) e o Relatorio Final
+            try { decisaoFinalService.gerarDocumentos(pDecidido); }
+            catch (IllegalStateException e) { ra.addFlashAttribute("erro", e.getMessage()); }
+            ra.addFlashAttribute("msg", "Pareceres atualizados. Decisao automatica: "
+                + pDecidido.getStatus().getDescricao() + ".");
+            return "redirect:/processos/" + id;
+        }
         ra.addFlashAttribute("msg", "Pareceres atualizados.");
         return "redirect:/processos/" + id + "#respostas";
     }
@@ -410,6 +453,20 @@ public class ProcessoController {
         processoService.retomarAposInformacao(id);
         auditoria.registrar("ANALISE_RETOMADA",
             "Processo " + p.getNumero() + " - pareceres em 'Solicita informacao' reabertos como pendencia limpa");
+        // Apos retomar, tenta decisao automatica caso os votos ja formem maioria
+        // (pode ocorrer quando so um medico havia pedido info e os demais ja votaram).
+        Processo pRetomado = processoService.tentarDecisaoAutomatica(id);
+        if (pRetomado.getStatus().isFinalizado()) {
+            try { decisaoFinalService.gerarDocumentos(pRetomado); }
+            catch (IllegalStateException e) { ra.addFlashAttribute("erro", e.getMessage()); }
+            auditoria.registrar("PROCESSO_DECIDIDO",
+                "Processo " + pRetomado.getNumero() + " - decisao automatica: "
+                + pRetomado.getStatus().getDescricao());
+            ra.addFlashAttribute("msg",
+                "Informacao complementar recebida. Analise retomada e decisao automatica aplicada: "
+                + pRetomado.getStatus().getDescricao() + ".");
+            return "redirect:/processos/" + id;
+        }
         ra.addFlashAttribute("msg",
             "Informacao complementar recebida. Analise retomada - registre os pareceres definitivos.");
         return "redirect:/processos/" + id + "#respostas";
@@ -628,38 +685,15 @@ public class ProcessoController {
             }
         }
         Processo p = processoService.decidir(id, decisao, motivoIndeferimento);
-        // Gera automaticamente o Oficio (se indeferido) e o Relatorio Final, anexando-os.
-        if (decisao == StatusProcesso.INDEFERIDO) {
-            try {
-                if (p.getDataEmissaoOficio() == null) {
-                    p.setDataEmissaoOficio(LocalDate.now());
-                    processoService.salvar(p);
-                }
-                anexoStorage.removerPorTipo(id, TipoAnexo.OFICIO_INDEFERIMENTO);
-                byte[] of = oficioService.gerar(p);
-                String nomeOf = "oficio-indeferimento-" + p.getNumero().replace("/", "-") + ".pdf";
-                anexoStorage.salvarBytes(p, TipoAnexo.OFICIO_INDEFERIMENTO,
-                    "Oficio de indeferimento gerado na decisao", nomeOf, "application/pdf", of);
-            } catch (IOException e) {
-                ra.addFlashAttribute("erro", "Decisao salva, mas falhou ao anexar o oficio: " + e.getMessage());
-            }
-        }
-        if (decisao.isFinalizado()) {
-            try {
-                anexoStorage.removerPorTipo(id, TipoAnexo.RELATORIO_FINAL);
-                byte[] pdf = relatorioService.gerar(p);
-                String nome = "relatorio-processo-" + p.getNumero().replace("/", "-") + ".pdf";
-                anexoStorage.salvarBytes(p, TipoAnexo.RELATORIO_FINAL,
-                    "Relatorio final gerado na decisao", nome, "application/pdf", pdf);
-            } catch (IOException e) {
-                ra.addFlashAttribute("erro", "Decisao salva, mas falhou ao anexar o relatorio: " + e.getMessage());
-            }
-        }
+        try { decisaoFinalService.gerarDocumentos(p); }
+        catch (IllegalStateException e) { ra.addFlashAttribute("erro", e.getMessage()); }
         auditoria.registrar("PROCESSO_DECIDIDO",
             "Processo " + p.getNumero() + " - " + decisao.getDescricao());
         ra.addFlashAttribute("msg", "Decisao registrada: " + decisao.getDescricao());
         return "redirect:/processos/" + id;
     }
+
+
 
     /** Atualiza dados de finalizacao: datas do oficio e resposta ao solicitante. */
     @PostMapping("/{id}/finalizacao")
@@ -680,6 +714,71 @@ public class ProcessoController {
         p.setEmailEnviadoSolicitante(emailEnviadoSolicitante);
         processoService.salvar(p);
         ra.addFlashAttribute("msg", "Dados de finalizacao atualizados.");
+        return "redirect:/processos/" + id + "#finalizacao";
+    }
+
+    /** Upload do Oficio de Indeferimento na aba Finalizacao (so para processos INDEFERIDOS). */
+    @PostMapping("/{id}/oficio-upload")
+    public String uploadOficio(@PathVariable Long id,
+                               @RequestParam("arquivo") MultipartFile arquivo,
+                               RedirectAttributes ra) {
+        Processo p = processoService.buscar(id);
+        if (p.getStatus() != StatusProcesso.INDEFERIDO) {
+            ra.addFlashAttribute("erro", "Upload de oficio so e permitido para processos Indeferidos.");
+            return "redirect:/processos/" + id + "#finalizacao";
+        }
+        try {
+            anexoStorage.removerPorTipo(id, TipoAnexo.OFICIO_INDEFERIMENTO);
+            anexoStorage.salvar(p, TipoAnexo.OFICIO_INDEFERIMENTO,
+                "Oficio de indeferimento", arquivo);
+            auditoria.registrar("ANEXO_ADICIONADO",
+                "Processo " + p.getNumero() + " - " + TipoAnexo.OFICIO_INDEFERIMENTO.getDescricao());
+            ra.addFlashAttribute("msg", "Oficio de indeferimento anexado.");
+        } catch (IllegalArgumentException | IOException e) {
+            ra.addFlashAttribute("erro", "Falha ao anexar o oficio: " + e.getMessage());
+        }
+        return "redirect:/processos/" + id + "#finalizacao";
+    }
+
+    /** Upload do comprovante de envio da resposta ao solicitante (passo 6). */
+    @PostMapping("/{id}/comprovante-envio-solicitante")
+    public String uploadComprovanteEnvioSolicitante(@PathVariable Long id,
+                                                    @RequestParam("arquivo") MultipartFile arquivo,
+                                                    RedirectAttributes ra) {
+        Processo p = processoService.buscar(id);
+        try {
+            anexoStorage.removerPorTipo(id, TipoAnexo.COMPROVANTE_ENVIO_SOLICITANTE);
+            anexoStorage.salvar(p, TipoAnexo.COMPROVANTE_ENVIO_SOLICITANTE,
+                "Comprovante de envio da resposta ao solicitante", arquivo);
+            auditoria.registrar("ANEXO_ADICIONADO",
+                "Processo " + p.getNumero() + " - " + TipoAnexo.COMPROVANTE_ENVIO_SOLICITANTE.getDescricao());
+            ra.addFlashAttribute("msg", "Comprovante de envio ao solicitante anexado.");
+        } catch (IllegalArgumentException | IOException e) {
+            ra.addFlashAttribute("erro", "Falha ao anexar o comprovante: " + e.getMessage());
+        }
+        return "redirect:/processos/" + id + "#finalizacao";
+    }
+
+    /** Upload do Comprovante SNT na aba Finalizacao (so para processos DEFERIDOS). */
+    @PostMapping("/{id}/comprovante-snt")
+    public String uploadComprovanteSnt(@PathVariable Long id,
+                                       @RequestParam("arquivo") MultipartFile arquivo,
+                                       RedirectAttributes ra) {
+        Processo p = processoService.buscar(id);
+        if (p.getStatus() != StatusProcesso.DEFERIDO) {
+            ra.addFlashAttribute("erro", "Upload do comprovante SNT so e permitido para processos Deferidos.");
+            return "redirect:/processos/" + id + "#finalizacao";
+        }
+        try {
+            anexoStorage.removerPorTipo(id, TipoAnexo.COMPROVANTE_SNT);
+            anexoStorage.salvar(p, TipoAnexo.COMPROVANTE_SNT,
+                "Comprovante de insercao da urgencia renal no SNT", arquivo);
+            auditoria.registrar("ANEXO_ADICIONADO",
+                "Processo " + p.getNumero() + " - " + TipoAnexo.COMPROVANTE_SNT.getDescricao());
+            ra.addFlashAttribute("msg", "Comprovante SNT anexado.");
+        } catch (IllegalArgumentException | IOException e) {
+            ra.addFlashAttribute("erro", "Falha ao anexar o comprovante SNT: " + e.getMessage());
+        }
         return "redirect:/processos/" + id + "#finalizacao";
     }
 
@@ -714,6 +813,11 @@ public class ProcessoController {
         Processo p = processoService.buscar(id);
         Parecer parecer = parecerRepository.findById(parecerId)
             .orElseThrow(() -> new IllegalArgumentException("Parecer nao encontrado: " + parecerId));
+        if (parecer.getOrigem() == OrigemParecer.AVALIADOR_SISTEMA) {
+            ra.addFlashAttribute("erro",
+                "Nao e possivel anexar resposta de um avaliador que votou pelo portal (nao-repudio).");
+            return "redirect:/processos/" + id + "#respostas";
+        }
         try {
             String desc = (descricao != null && !descricao.isBlank())
                 ? descricao
@@ -741,6 +845,17 @@ public class ProcessoController {
 
     @PostMapping("/anexos/{anexoId}/excluir")
     public String excluirAnexo(@PathVariable Long anexoId, RedirectAttributes ra) {
+        // Bloqueia a exclusao de RESPOSTA_AVALIADOR de parecer votado pelo portal
+        // (nao-repudio: o registro autenticado nao pode ser apagado pelo operador).
+        Anexo anexoParaExcluir = anexoStorage.buscar(anexoId);
+        if (anexoParaExcluir.getTipo() == TipoAnexo.RESPOSTA_AVALIADOR
+                && anexoParaExcluir.getParecer() != null
+                && anexoParaExcluir.getParecer().getOrigem() == OrigemParecer.AVALIADOR_SISTEMA) {
+            Long pid = anexoParaExcluir.getProcesso().getId();
+            ra.addFlashAttribute("erro",
+                "Nao e possivel remover a resposta de um avaliador que votou pelo portal (nao-repudio).");
+            return "redirect:/processos/" + pid + "#respostas";
+        }
         Long processoId = anexoStorage.excluir(anexoId);
         auditoria.registrar("ANEXO_REMOVIDO", "Processo id " + processoId);
         ra.addFlashAttribute("msg", "Anexo removido.");
