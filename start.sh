@@ -12,6 +12,8 @@ if ! { [ -n "${JAVA_HOME:-}" ] && is_java21 "$JAVA_HOME"; }; then
   for c in \
       "/c/Users/rafae/Tools/jdk-21.0.11+10" \
       "$HOME/Tools/jdk-21" \
+      "/usr/local/sdkman/candidates/java/21.0.10-ms" \
+      "$(ls -d /usr/local/sdkman/candidates/java/21.* 2>/dev/null | head -1)" \
       "/usr/lib/jvm/temurin-21-jdk-amd64" \
       "/usr/lib/jvm/java-21-openjdk" \
       "/usr/lib/jvm/java-21-openjdk-amd64" \
@@ -35,5 +37,35 @@ if [ -z "$MVN" ]; then
   exit 1
 fi
 
-echo "==> Subindo SGPUR | perfil: $PERFIL | JAVA_HOME: ${JAVA_HOME:-(PATH)}"
-exec "$MVN" -DskipTests -Dspring-boot.run.profiles="$PERFIL" spring-boot:run
+# --- Porta: 3000 no Codespace, 8080 em outros ambientes ---
+if [ -n "${CODESPACES:-}" ] || [ -n "${CODESPACE_NAME:-}" ]; then
+  PORTA=3000
+else
+  PORTA=8080
+fi
+
+# --- URL e abertura de navegador ---
+if [ -n "${CODESPACE_NAME:-}" ]; then
+  DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+  URL="https://${CODESPACE_NAME}-${PORTA}.${DOMAIN}"
+else
+  URL="http://localhost:$PORTA"
+fi
+
+# Abre o navegador em background assim que a porta responder
+(
+  until curl -s -o /dev/null "$URL/login" 2>/dev/null; do sleep 2; done
+  echo "==> Abrindo $URL"
+  if command -v code &>/dev/null; then
+    code --open-url "$URL" 2>/dev/null || true
+  elif command -v open &>/dev/null; then
+    open "$URL"
+  elif command -v xdg-open &>/dev/null && [ -n "${DISPLAY:-}" ]; then
+    xdg-open "$URL"
+  fi
+) &
+
+echo "==> Subindo SGPUR | perfil: $PERFIL | porta: $PORTA | url: $URL | JAVA_HOME: ${JAVA_HOME:-(PATH)}"
+exec "$MVN" -DskipTests \
+  -Dspring-boot.run.arguments="--spring.profiles.active=$PERFIL --server.port=$PORTA" \
+  spring-boot:run
