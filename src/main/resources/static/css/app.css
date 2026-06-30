@@ -321,6 +321,11 @@ body {
 
 .table tbody tr:hover { background: var(--rs-blue-light) !important; }
 
+/* Forms dentro de tabela (aba Respostas): controles nao vazam da celula */
+.table td form { min-width: 0; }
+.table td form .form-select,
+.table td form .form-control { width: 100% !important; }
+
 /* === Form controls === */
 .form-control, .form-select {
     border-radius: 8px;

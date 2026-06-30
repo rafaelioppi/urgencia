@@ -492,7 +492,7 @@
                             <th style="width: 130px">Data resposta</th>
                             <th style="width: 120px">Origem</th>
                             <th style="width: 140px">Resposta anexada</th>
-                            <th style="width: 180px">Acao</th>
+                            <th>Acao</th>
                         </tr></thead>
                         <tbody>
                         <th:block th:each="par : ${processo.pareceres}">
@@ -546,10 +546,9 @@
                                 <form th:unless="${pareceresPortal.contains(par.id) or (processo.status.finalizado and par.resultado == null)}"
                                       th:action="@{/processos/{id}/resposta-avaliador(id=${processo.id})}"
                                       method="post" enctype="multipart/form-data"
-                                      class="d-flex gap-1 align-items-center flex-nowrap">
+                                      class="d-flex flex-column gap-1">
                                     <input type="hidden" name="parecerId" th:value="${par.id}">
                                     <select name="resultado" class="form-select form-select-sm"
-                                            style="width: 140px"
                                             th:disabled="${par.resultado != null}"
                                             th:if="${par.resultado == null}">
                                         <option value="">-- parecer --</option>
@@ -562,14 +561,14 @@
                                           th:text="${par.resultado.descricao}">—</span>
                                     <th:block th:if="${par.resultado == null and !pareceresComResposta.contains(par.id)}">
                                         <input type="file" name="arquivo" class="form-control form-control-sm"
-                                               accept=".pdf,.eml,.msg" style="width: 140px" required>
+                                               accept=".pdf,.eml,.msg" required>
                                         <button class="btn btn-outline-primary btn-sm text-nowrap btn-anexar-resposta">
                                             <i class="bi bi-upload"></i> Registrar
                                         </button>
                                     </th:block>
                                     <th:block th:if="${par.resultado != null and !pareceresComResposta.contains(par.id)}">
                                         <input type="file" name="arquivo" class="form-control form-control-sm"
-                                               accept=".pdf,.eml,.msg" style="width: 140px" required>
+                                               accept=".pdf,.eml,.msg" required>
                                         <button class="btn btn-outline-primary btn-sm text-nowrap btn-anexar-resposta">
                                             <i class="bi bi-upload"></i> Anexar
                                         </button>
