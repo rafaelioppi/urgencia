@@ -216,6 +216,19 @@
                                 </div>
                             </form>
                         </div>
+
+                        <!-- Finalizacao explicita da etapa -->
+                        <div th:if="${recebimentoFeito}" class="alert alert-success d-flex align-items-center justify-content-between py-3 mb-0">
+                            <div>
+                                <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                                <strong>Recebimento concluido!</strong>
+                                <span class="text-muted small ms-2">Copia da solicitacao e capa do processo registradas.</span>
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm"
+                                    onclick="document.querySelector('.wizard-step[href=&quot;#pane-envio&quot;]').click()">
+                                <i class="bi bi-arrow-right"></i> Avancar para Envio
+                            </button>
+                        </div>
                     </div>
                 </div><!-- /ABA 1 Recebimento -->
 
@@ -323,9 +336,22 @@
                                 <i class="bi bi-calendar-check"></i> Registrar envio (data de hoje)
                             </button>
                         </div>
-                    </form>
+                        </form>
+
+                        <!-- Finalizacao explicita da etapa -->
+                        <div th:if="${envioFeito}" class="alert alert-success d-flex align-items-center justify-content-between py-3 mb-0">
+                            <div>
+                                <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                                <strong>Envio concluido!</strong>
+                                <span class="text-muted small ms-2">Documentos enviados aos 3 avaliadores.</span>
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm"
+                                    onclick="document.querySelector('.wizard-step[href=&quot;#pane-respostas&quot;]').click()">
+                                <i class="bi bi-arrow-right"></i> Avancar para Respostas
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
                 </div><!-- /ABA 2 Envio -->
 
                 <!-- ABA 3: Respostas -->
@@ -496,6 +522,20 @@
                         Sugestao automatica: <strong th:text="${sugestao.descricao}"></strong>
                         (2 de 3 favoraveis defere o processo).
                     </div>
+
+                    <!-- Finalizacao explicita da etapa -->
+                    <div th:if="${liberadoDecisao and !processo.status.finalizado}"
+                         class="alert alert-success d-flex align-items-center justify-content-between py-3 mb-0 mt-2">
+                        <div>
+                            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                            <strong>Respostas concluidas!</strong>
+                            <span class="text-muted small ms-2">Todos os pareceres recebidos.</span>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm"
+                                onclick="document.querySelector('.wizard-step[href=&quot;#pane-decisao&quot;]').click()">
+                            <i class="bi bi-arrow-right"></i> Avancar para Decisao
+                        </button>
+                    </div>
                 </div>
             </div>
                 </div><!-- /ABA 3 Respostas -->
@@ -526,6 +566,20 @@
                             <button class="btn btn-primary btn-sm">Registrar decisao</button>
                         </div>
                     </form>
+
+                    <!-- Finalizacao explicita da etapa -->
+                    <div th:if="${processo.status.finalizado}"
+                         class="alert alert-success d-flex align-items-center justify-content-between py-3 mb-0 mt-2">
+                        <div>
+                            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                            <strong>Decisao registrada!</strong>
+                            <span class="text-muted small ms-2" th:text="'Processo ' + ${processo.status.descricao}"></span>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm"
+                                onclick="document.querySelector('.wizard-step[href=&quot;#pane-finalizacao&quot;]').click()">
+                            <i class="bi bi-arrow-right"></i> Avancar para Finalizacao
+                        </button>
+                    </div>
                 </div>
             </div>
                 </div><!-- /ABA 4 Decisao -->

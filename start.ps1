@@ -24,14 +24,14 @@ if (-not $mvn) {
     exit 1
 }
 
-# --- Libera a porta 8080 (encerra qualquer processo que esteja escutando) ---
-$portas = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue
+# --- Libera a porta 3000 (encerra qualquer processo que esteja escutando) ---
+$portas = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
 if ($portas) {
     $pids = $portas | Select-Object -ExpandProperty OwningProcess -Unique
     foreach ($processo in $pids) {
         try {
             $nome = (Get-Process -Id $processo -ErrorAction Stop).ProcessName
-            Write-Host "==> Liberando a porta 8080 (encerrando $nome PID $processo)..." -ForegroundColor Yellow
+            Write-Host "==> Liberando a porta 3000 (encerrando $nome PID $processo)..." -ForegroundColor Yellow
             Stop-Process -Id $processo -Force -ErrorAction Stop
         } catch {
             Write-Host "    Nao foi possivel encerrar o PID ${processo}: $($_.Exception.Message)" -ForegroundColor Red

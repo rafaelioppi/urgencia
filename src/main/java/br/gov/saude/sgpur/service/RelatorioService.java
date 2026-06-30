@@ -68,9 +68,10 @@ public class RelatorioService {
             // 1. Gera o sumario executivo (capa + dados + pareceres + decisao + anexos)
             byte[] summary = gerarSummary(p);
 
-            // 2. Coleta os PDFs anexados (exceto RELATORIO_FINAL — evitar ciclo)
+            // 2. Coleta os PDFs anexados (exceto RELATORIO_FINAL e CAPA_PROCESSO — evitar ciclo/duplicacao)
             List<Anexo> pdfs = p.getAnexos().stream()
                 .filter(a -> a.getTipo() != TipoAnexo.RELATORIO_FINAL)
+                .filter(a -> a.getTipo() != TipoAnexo.CAPA_PROCESSO)
                 .filter(a -> a.getContentType() != null
                     && a.getContentType().toLowerCase().contains("pdf"))
                 .sorted(Comparator.comparing(Anexo::getDataUpload))
@@ -79,6 +80,7 @@ public class RelatorioService {
             // 3. Coleta anexos nao-PDF (para pagina informativa)
             List<Anexo> naoPdf = p.getAnexos().stream()
                 .filter(a -> a.getTipo() != TipoAnexo.RELATORIO_FINAL)
+                .filter(a -> a.getTipo() != TipoAnexo.CAPA_PROCESSO)
                 .filter(a -> a.getContentType() == null
                     || !a.getContentType().toLowerCase().contains("pdf"))
                 .sorted(Comparator.comparing(Anexo::getDataUpload))
@@ -110,7 +112,7 @@ public class RelatorioService {
         Font fSecao = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
 
         // Pagina de capa
-        adicionarCapa(doc, p, "RELATORIO FINAL DE PROCESSO", false);
+        adicionarCapa(doc, p, "Relatorio do Processo " + p.getNumero(), false);
         doc.newPage();
 
         Paragraph titulo = new Paragraph("RELATORIO FINAL - PROCESSO DE URGENCIA RENAL", fTitulo);
@@ -336,17 +338,21 @@ public class RelatorioService {
         BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
         float margemEsq = 40;
         float margemDir = 40;
-        float topo = PageSize.A4.getHeight();
-        float largUtil = PageSize.A4.getWidth() - margemEsq - margemDir;
         int totalPaginas = reader.getNumberOfPages();
 
         float logoSize = 33;
         float logoMargem = 36;
 
         for (int i = 1; i <= totalPaginas; i++) {
+            // Usa as dimensoes REAIS de cada pagina (evita cabecalho cortado
+            // em paginas com tamanho diferente de A4 ex.: de anexos escaneados)
+            Rectangle pageSize = reader.getPageSize(i);
+            float topo = pageSize.getHeight();
+            float largUtil = pageSize.getWidth() - margemEsq - margemDir;
+
             PdfContentByte over = stamper.getOverContent(i);
 
-            // Logo do RS (canto superior esquerdo, 50% maior)
+            // Logo do RS (canto superior esquerdo)
             if (logo != null) {
                 Image img = Image.getInstance(logo);
                 img.setAbsolutePosition(margemEsq, topo - logoMargem);
@@ -371,7 +377,7 @@ public class RelatorioService {
             over.setLineWidth(0.5f);
             over.setColorStroke(new Color(180, 180, 180));
             over.moveTo(margemEsq, topo - 44);
-            over.lineTo(PageSize.A4.getWidth() - margemDir, topo - 44);
+            over.lineTo(pageSize.getWidth() - margemDir, topo - 44);
             over.stroke();
 
             // Numeracao (canto inferior direito)
@@ -379,7 +385,7 @@ public class RelatorioService {
             over.setFontAndSize(bf, 9);
             over.showTextAligned(Element.ALIGN_RIGHT,
                 "Pagina " + i + " de " + totalPaginas,
-                PageSize.A4.getWidth() - margemDir, 22, 0);
+                pageSize.getWidth() - margemDir, 22, 0);
             over.endText();
         }
 
@@ -432,18 +438,23 @@ public class RelatorioService {
             log.warn("Logo nao encontrado em static/brasao.png, capa sem imagem");
         }
 
-        Paragraph orgao = new Paragraph("GOVERNO DO ESTADO DO RIO GRANDE DO SUL", fOrgao);
+        Paragraph orgao = new Paragraph("ESTADO DO RIO GRANDE DO SUL", fOrgao);
         orgao.setAlignment(Element.ALIGN_CENTER);
         doc.add(orgao);
 
-        Paragraph secretaria = new Paragraph("SECRETARIA DE SAUDE", fSubOrgao);
+        Paragraph secretaria = new Paragraph("SECRETARIA DA SAUDE", fSubOrgao);
         secretaria.setAlignment(Element.ALIGN_CENTER);
         doc.add(secretaria);
 
-        Paragraph urgencia = new Paragraph("URGENCIA RENAL", fUrgencia);
-        urgencia.setAlignment(Element.ALIGN_CENTER);
-        urgencia.setSpacingAfter(40);
-        doc.add(urgencia);
+        Paragraph central = new Paragraph("CENTRAL ESTADUAL DE TRANSPLANTES", fSubOrgao);
+        central.setAlignment(Element.ALIGN_CENTER);
+        doc.add(central);
+
+        Font fSolicitacaoAzul = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, AZUL);
+        Paragraph solicitacao = new Paragraph("SOLICITACAO DE URGENCIA RENAL", fSolicitacaoAzul);
+        solicitacao.setAlignment(Element.ALIGN_CENTER);
+        solicitacao.setSpacingAfter(30);
+        doc.add(solicitacao);
 
         PdfPTable separador = new PdfPTable(1);
         separador.setWidthPercentage(60);
@@ -509,6 +520,7 @@ public class RelatorioService {
             for (PdfPCell c : new PdfPCell[]{cRotulo, cValor}) {
                 c.setPadding(5);
                 c.setBorderColor(new Color(222, 226, 230));
+                c.setHorizontalAlignment(Element.ALIGN_CENTER);
             }
             tDados.addCell(cRotulo);
             tDados.addCell(cValor);
@@ -559,6 +571,7 @@ public class RelatorioService {
             for (PdfPCell c : new PdfPCell[]{cNome, cInst, cPar}) {
                 c.setPadding(5);
                 c.setBorderColor(new Color(222, 226, 230));
+                c.setHorizontalAlignment(Element.ALIGN_CENTER);
             }
             tAval.addCell(cNome);
             tAval.addCell(cInst);
@@ -580,6 +593,7 @@ public class RelatorioService {
         for (PdfPCell c : new PdfPCell[]{c1, c2}) {
             c.setPadding(5);
             c.setBorderColor(new Color(222, 226, 230));
+            c.setHorizontalAlignment(Element.ALIGN_CENTER);
         }
         t.addCell(c1);
         t.addCell(c2);

@@ -41,7 +41,7 @@ public class RelatorioAnualService {
      * @param processos processos do ano (ja ordenados por sequencial)
      */
     public byte[] gerar(int ano, List<Processo> processos) {
-        Document doc = new Document(PageSize.A4.rotate(), 36, 36, 46, 36);
+        Document doc = new Document(PageSize.A4, 36, 36, 46, 36);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             PdfWriter.getInstance(doc, out);

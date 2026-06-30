@@ -9,12 +9,11 @@ case "$PERFIL" in
   *) echo "Perfil invalido '$PERFIL'. Use: ./start.sh [dev|prod]" >&2; exit 1 ;;
 esac
 
-# --- Java 21: garante a versao 21 (ignora um JAVA_HOME de outra versao) ---
+# --- Java 21 (forca o JDK 21, mesmo que JAVA_HOME aponte para outra versao) ---
 is_java21() { [ -x "$1/bin/java" ] && "$1/bin/java" -version 2>&1 | head -1 | grep -q '"21'; }
 
 if ! { [ -n "${JAVA_HOME:-}" ] && is_java21 "$JAVA_HOME"; }; then
   for c in \
-      "/c/Users/rafae/Tools/jdk-21.0.11+10" \
       "$HOME/Tools/jdk-21" \
       "/usr/local/sdkman/candidates/java/21.0.10-ms" \
       "$(ls -d /usr/local/sdkman/candidates/java/21.* 2>/dev/null | head -1)" \
@@ -33,30 +32,24 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 # --- Maven (PATH ou caminho conhecido) ---
 MVN="$(command -v mvn || true)"
-if [ -z "$MVN" ] && [ -x "/c/Users/rafae/Tools/apache-maven-3.9.6/bin/mvn" ]; then
-  MVN="/c/Users/rafae/Tools/apache-maven-3.9.6/bin/mvn"
+if [ -z "$MVN" ] && [ -x "$HOME/Tools/apache-maven-3.9.6/bin/mvn" ]; then
+  MVN="$HOME/Tools/apache-maven-3.9.6/bin/mvn"
 fi
 if [ -z "$MVN" ]; then
   echo "Maven nao encontrado. Instale o Maven ou ajuste o caminho em start.sh." >&2
   exit 1
 fi
 
-# --- Porta: 3000 no Codespace, 8080 em outros ambientes ---
-if [ -n "${CODESPACES:-}" ] || [ -n "${CODESPACE_NAME:-}" ]; then
-  PORTA=2500
-else
-  PORTA=8080
-fi
-
-# --- Libera a porta antes de subir ---
+# --- Libera a porta 3000 (encerra qualquer processo que esteja escutando) ---
+PORTA=3000
 PORTA_PID="$(lsof -ti:"$PORTA" 2>/dev/null || true)"
 if [ -n "$PORTA_PID" ]; then
-  echo "==> Liberando porta $PORTA (PID $PORTA_PID)..."
+  echo "==> Liberando a porta $PORTA (PID $PORTA_PID)..."
   kill -9 $PORTA_PID 2>/dev/null || true
   sleep 1
 fi
 
-# --- URL e abertura de navegador ---
+# --- Monta URL (Codespace ou local) ---
 if [ -n "${CODESPACE_NAME:-}" ]; then
   DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
   URL="https://${CODESPACE_NAME}-${PORTA}.${DOMAIN}"
@@ -77,7 +70,7 @@ fi
   fi
 ) &
 
-echo "==> Subindo SGPUR | perfil: $PERFIL | porta: $PORTA | url: $URL | JAVA_HOME: ${JAVA_HOME:-(PATH)}"
+echo "==> Subindo SGPUR | perfil: $PERFIL | porta: $PORTA | url: $URL | JAVA_HOME: ${JAVA_HOME}"
 exec "$MVN" -DskipTests \
-  -Dspring-boot.run.arguments="--spring.profiles.active=$PERFIL --server.port=$PORTA" \
+  "-Dspring-boot.run.profiles=$PERFIL" \
   spring-boot:run
