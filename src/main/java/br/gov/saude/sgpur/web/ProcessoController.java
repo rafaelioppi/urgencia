@@ -589,8 +589,11 @@ public class ProcessoController {
                     "Estes documentos clinicos nao sao PDF e ficaram de fora do PDF consolidado: "
                         + String.join(", ", ignorados) + ".");
             }
-        } catch (IOException e) {
-            ra.addFlashAttribute("erro", "Envio registrado, mas falhou ao gerar a solicitacao PDF: " + e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            String msg = (e instanceof IOException)
+                ? "Falha ao gerar a solicitacao PDF: " + e.getMessage()
+                : e.getMessage();
+            ra.addFlashAttribute("erro", "Envio registrado, mas " + msg);
             return "redirect:/processos/" + id + "#envio";
         }
 

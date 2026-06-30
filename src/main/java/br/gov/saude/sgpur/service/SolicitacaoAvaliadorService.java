@@ -73,14 +73,22 @@ public class SolicitacaoAvaliadorService {
         try {
             PdfCopy copy = new PdfCopy(doc, out);
             doc.open();
+            boolean algumaPaginaAdicionada = false;
             for (byte[] pdf : validos) {
                 PdfReader reader = new PdfReader(pdf);
                 int paginas = reader.getNumberOfPages();
                 for (int i = 1; i <= paginas; i++) {
                     copy.addPage(copy.getImportedPage(reader, i));
+                    algumaPaginaAdicionada = true;
                 }
                 copy.freeReader(reader);
                 reader.close();
+            }
+            if (!algumaPaginaAdicionada) {
+                doc.close();
+                throw new IllegalStateException(
+                    "Os PDFs anexados estao vazios (nenhuma pagina encontrada). "
+                    + "Remova-os e anexe novamente os documentos clinicos originais.");
             }
             doc.close();
             return out.toByteArray();
