@@ -485,7 +485,8 @@
                 </div>
                 <div class="card-body">
                     <!-- Formulario unificado: resultado + upload por medico -->
-                    <table class="table align-middle">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
                         <thead><tr>
                             <th>Medico</th>
                             <th style="width: 200px">Parecer</th>
@@ -590,7 +591,8 @@
                         </tr>
                         </th:block>
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
 
                     <!-- Botao para salvar apenas pareceres (sem upload) — util para ajustes manuais -->
                     <form th:action="@{/processos/{id}/pareceres(id=${processo.id})}" method="post"

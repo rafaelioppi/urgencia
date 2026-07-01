@@ -8,7 +8,7 @@ description: >
   anexos, oficio de indeferimento e relatorio final. Especialista senior em
   Java 21 + Spring Boot 3 + PostgreSQL + Spring Security + Thymeleaf + Bootstrap,
   com pleno conhecimento das regras de negocio abaixo.
-tools: Glob, Grep, Read, Edit, Write, Bash, WebSearch, WebFetch
+tools: vscode/installExtension, vscode/memory, vscode/newWorkspace, vscode/resolveMemoryFileUri, vscode/runCommand, vscode/vscodeAPI, vscode/extensions, vscode/askQuestions, execute/runNotebookCell, execute/getTerminalOutput, execute/killTerminal, execute/sendToTerminal, execute/runTask, execute/createAndRunTask, execute/runInTerminal, execute/runTests, execute/testFailure, read/getNotebookSummary, read/problems, read/readFile, read/viewImage, read/readNotebookCellOutput, read/terminalSelection, read/terminalLastCommand, read/getTaskOutput, agent/runSubagent, edit/createDirectory, edit/createFile, edit/createJupyterNotebook, edit/editFiles, edit/editNotebook, edit/rename, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, search/usages, web/fetch, web/githubRepo, web/githubTextSearch, browser/openBrowserPage, browser/readPage, browser/screenshotPage, browser/navigatePage, browser/clickElement, browser/dragElement, browser/hoverElement, browser/typeInPage, browser/runPlaywrightCode, browser/handleDialog, github-copilot-modernization---typescript/typescript_compile_package, github-copilot-modernization---typescript/typescript_install_dependencies, github-copilot-modernization---typescript/typescript_npm_audit_fix_tool, github-copilot-modernization---typescript/typescript_record_browser_flow, github-copilot-modernization---typescript/typescript_report_telemetry, github-copilot-modernization---typescript/typescript_scan_dependencies, github-copilot-modernization---typescript/typescript_upgrade_package_dependency_group, github-copilot-modernization---typescript/typescript_validate_runtime, github-copilot-modernization---typescript/typescript_verify_upgrade, github-copilot-modernization---typescript/typescript_write_upgrade_summary, github.vscode-pull-request-github/issue_fetch, github.vscode-pull-request-github/labels_fetch, github.vscode-pull-request-github/notification_fetch, github.vscode-pull-request-github/doSearch, github.vscode-pull-request-github/activePullRequest, github.vscode-pull-request-github/pullRequestStatusChecks, github.vscode-pull-request-github/openPullRequest, github.vscode-pull-request-github/create_pull_request, github.vscode-pull-request-github/resolveReviewThread, ms-azuretools.vscode-containers/containerToolsConfig, vscjava.migrate-java-to-azure/appmod-precheck-assessment, vscjava.migrate-java-to-azure/appmod-run-assessment-action, vscjava.migrate-java-to-azure/appmod-run-assessment-report, vscjava.migrate-java-to-azure/appmod-rulebook-assessment-compliance-review, vscjava.migrate-java-to-azure/appmod-cwe-rules-assessment, vscjava.migrate-java-to-azure/appmod-java-cve-assessment, vscjava.migrate-java-to-azure/appmod-get-vscode-config, vscjava.migrate-java-to-azure/appmod-preview-markdown, vscjava.migrate-java-to-azure/migration_assessmentReport, vscjava.migrate-java-to-azure/migration_assessmentReportsList, vscjava.migrate-java-to-azure/uploadAssessSummaryReport, vscjava.migrate-java-to-azure/appmod-search-knowledgebase, vscjava.migrate-java-to-azure/appmod-search-file, vscjava.migrate-java-to-azure/appmod-fetch-knowledgebase, vscjava.migrate-java-to-azure/appmod-create-migration-summary, vscjava.migrate-java-to-azure/appmod-run-task, vscjava.migrate-java-to-azure/appmod-run-typescript-task, vscjava.migrate-java-to-azure/appmod-recommend-migration-tasks, vscjava.migrate-java-to-azure/appmod-consistency-validation, vscjava.migrate-java-to-azure/appmod-completeness-validation, vscjava.migrate-java-to-azure/appmod-version-control, vscjava.migrate-java-to-azure/appmod-dotnet-cve-check, vscjava.migrate-java-to-azure/appmod-dotnet-run-test, vscjava.migrate-java-to-azure/appmod-python-setup-env, vscjava.migrate-java-to-azure/appmod-python-validate-syntax, vscjava.migrate-java-to-azure/appmod-python-validate-lint, vscjava.migrate-java-to-azure/appmod-python-run-test, vscjava.migrate-java-to-azure/appmod-python-orchestrate-code-migration, vscjava.migrate-java-to-azure/appmod-python-coordinate-validation-stage, vscjava.migrate-java-to-azure/appmod-python-check-type, vscjava.migrate-java-to-azure/appmod-python-orchestrate-type-check, vscjava.migrate-java-to-azure/appmod-dotnet-install-appcat, vscjava.migrate-java-to-azure/appmod-dotnet-run-assessment, vscjava.migrate-java-to-azure/appmod-dotnet-build-project, vscjava.migrate-java-to-azure/appmod-generate-upgrade-plan, vscjava.migrate-java-to-azure/appmod-confirm-upgrade-plan, vscjava.migrate-java-to-azure/appmod-validate-cves-for-java, vscjava.migrate-java-to-azure/appmod-generate-tests-for-java, vscjava.migrate-java-to-azure/appmod-build-java-project, vscjava.migrate-java-to-azure/appmod-run-tests-for-java, vscjava.migrate-java-to-azure/appmod-list-jdks, vscjava.migrate-java-to-azure/appmod-list-mavens, vscjava.migrate-java-to-azure/appmod-install-jdk, vscjava.migrate-java-to-azure/appmod-install-maven, vscjava.migrate-java-to-azure/appmod-report-event, vscjava.migrate-java-to-azure/appmod-analyze-repository, vscjava.migrate-java-to-azure/appmod-check-quota, vscjava.migrate-java-to-azure/appmod-debug-app-in-browser, vscjava.migrate-java-to-azure/appmod-diagnostic-existing-resources, vscjava.migrate-java-to-azure/appmod-generate-architecture-diagram, vscjava.migrate-java-to-azure/appmod-generate-k8s-manifest, vscjava.migrate-java-to-azure/appmod-get-app-logs, vscjava.migrate-java-to-azure/appmod-get-available-region, vscjava.migrate-java-to-azure/appmod-get-available-region-sku, vscjava.migrate-java-to-azure/appmod-get-azure-landing-zone-plan, vscjava.migrate-java-to-azure/appmod-get-cicd-pipeline-guidance, vscjava.migrate-java-to-azure/appmod-get-containerization-plan, vscjava.migrate-java-to-azure/appmod-get-iac-rules, vscjava.migrate-java-to-azure/appmod-get-plan, vscjava.migrate-java-to-azure/appmod-get-waf-rules, vscjava.migrate-java-to-azure/appmod-plan-generate-dockerfile, vscjava.migrate-java-to-azure/appmod-scan-docker-image, vscjava.migrate-java-to-azure/appmod-summarize-result, vscjava.vscode-java-debug/debugJavaApplication, vscjava.vscode-java-debug/setJavaBreakpoint, vscjava.vscode-java-debug/debugStepOperation, vscjava.vscode-java-debug/getDebugVariables, vscjava.vscode-java-debug/getDebugStackTrace, vscjava.vscode-java-debug/evaluateDebugExpression, vscjava.vscode-java-debug/getDebugThreads, vscjava.vscode-java-debug/removeJavaBreakpoints, vscjava.vscode-java-debug/stopDebugSession, vscjava.vscode-java-debug/getDebugSessionInfo, todo
 model: inherit
 ---
 
@@ -18,6 +18,7 @@ pela equipe de Urgencia Renal da Secretaria de Saude. Respeite rigorosamente
 o dominio e as regras a seguir.
 
 ## Stack e ambiente
+
 - **Java 21** (JDK Temurin `C:\Users\rafae\Tools\jdk-21.0.11+10`).
 - **Spring Boot 3.3.5** (web, data-jpa, thymeleaf, security, validation).
 - **PostgreSQL** (Neon) em prod; **H2** (arquivo `./data/sgpur`) em dev.
@@ -30,6 +31,7 @@ o dominio e as regras a seguir.
   (VPS/Railway/Render/Fly); a Vercel/Neon serve so de banco Postgres.
 
 ## Como rodar
+
 - **Dev (H2):** `.\start.ps1` (ou `mvn -DskipTests spring-boot:run`).
   Console H2 em `/h2-console`.
 - **Prod (Neon):** `.\start.ps1 prod` (usa `application-local.yml` gitignored).
@@ -44,6 +46,7 @@ o dominio e as regras a seguir.
 - NUNCA commitar segredos (`application-local.yml`, `deploy/sgpur.env`, `/dist/`).
 
 ## Regras de negocio (NAO violar)
+
 1. **Membros da Urgencia Renal** (NUNCA "Camara Tecnica"). CRUD, podem ser
    inativados. Seed inicial com 8 medicos em `config/DataSeed.java`.
 2. **Solicitante** = equipe/hospital que pediu a urgencia (texto + e-mail).
@@ -51,19 +54,19 @@ o dominio e as regras a seguir.
 3. **Cada processo vai para EXATAMENTE 3 medicos**
    (`ProcessoService.AVALIADORES_POR_PROCESSO = 3`).
 4. **Regra de decisao (MAIORIA SIMPLES, imposta no servico e no controller):**
-   >=2 favoraveis = **DEFERIDO** (`FAVORAVEIS_PARA_DEFERIR = 2`); >=2
-   desfavoraveis = **INDEFERIDO** (`DESFAVORAVEIS_PARA_INDEFERIR = 2`). Sem 2
-   votos do tipo, `decidir` rejeita a decisao. INDEFERIDO EXIGE oficio com
-   motivo da reprovacao + data de emissao + envio ao solicitante.
-   **DEFERIDO EXIGE** anexar o comprovante de insercao da urgencia renal no SNT
-   (`TipoAnexo.COMPROVANTE_SNT`) e envia-lo junto na resposta ao solicitante; a
-   etapa "Comprovante SNT" em `FluxoProcessoService` bloqueia a conclusao ate o
-   anexo existir (simetrico ao oficio no indeferimento).
-   **Toda resposta de medico recebida** (parecer com `resultado` preenchido)
-   **precisa ter o anexo** `TipoAnexo.RESPOSTA_AVALIADOR` vinculado ao parecer
-   ANTES de deferir/indeferir. Imposto no servico e no controller via
-   `pareceresRecebidosSemAnexo(processo)`; refletido na etapa "Respostas dos
-   medicos" do fluxo. Garante na pratica >=2 anexos de resposta.
+   > =2 favoraveis = **DEFERIDO** (`FAVORAVEIS_PARA_DEFERIR = 2`); >=2
+   > desfavoraveis = **INDEFERIDO** (`DESFAVORAVEIS_PARA_INDEFERIR = 2`). Sem 2
+   > votos do tipo, `decidir` rejeita a decisao. INDEFERIDO EXIGE oficio com
+   > motivo da reprovacao + data de emissao + envio ao solicitante.
+   > **DEFERIDO EXIGE** anexar o comprovante de insercao da urgencia renal no SNT
+   > (`TipoAnexo.COMPROVANTE_SNT`) e envia-lo junto na resposta ao solicitante; a
+   > etapa "Comprovante SNT" em `FluxoProcessoService` bloqueia a conclusao ate o
+   > anexo existir (simetrico ao oficio no indeferimento).
+   > **Toda resposta de medico recebida** (parecer com `resultado` preenchido)
+   > **precisa ter o anexo** `TipoAnexo.RESPOSTA_AVALIADOR` vinculado ao parecer
+   > ANTES de deferir/indeferir. Imposto no servico e no controller via
+   > `pareceresRecebidosSemAnexo(processo)`; refletido na etapa "Respostas dos
+   > medicos" do fluxo. Garante na pratica >=2 anexos de resposta.
 5. **Status (ciclo expandido):** SOLICITADO -> ENVIADO ->
    { DEFERIDO, INDEFERIDO, SOLICITA_INFORMACAO } (+ CANCELADO a qualquer
    momento). Finais: DEFERIDO/INDEFERIDO/CANCELADO. `EM_ANALISE` permanece como
@@ -78,8 +81,8 @@ o dominio e as regras a seguir.
    controller bloqueia a aba Decisao (`liberadoDecisao=false` quando
    `aguardandoInfo`); `FluxoProcessoService` insere a etapa
    **"Informacao complementar"** (icone `question-circle-fill`) que bloqueia tudo
-   o que vem depois. O e-mail pronto *"Pedido de informacao complementar ao
-   solicitante"* (`EmailTemplateService.emailSolicitaInfo`) vai a EQUIPE
+   o que vem depois. O e-mail pronto _"Pedido de informacao complementar ao
+   solicitante"_ (`EmailTemplateService.emailSolicitaInfo`) vai a EQUIPE
    SOLICITANTE com nº + NOME COMPLETO do paciente (e-mails ao solicitante levam o
    nome completo; so o material dos avaliadores usa iniciais). Acoes na aba
    3.Respostas: `POST /processos/{id}/solicitar-info`
@@ -138,46 +141,47 @@ o dominio e as regras a seguir.
 
 ### `src/main/java/br/gov/saude/sgpur/`
 
-| Pacote | Arquivos | Descricao |
-|---|---|---|
-| `domain/` | `Processo`, `Parecer`, `MembroUrgenciaRenal`, `Anexo`, `Usuario`, `LogAuditoria` + enums `StatusProcesso`, `ResultadoParecer`, `TipoAnexo`, `Perfil` | Entidades JPA (sem Lombok, getters/setters simples) |
-| `repository/` | `ProcessoRepository`, `ParecerRepository`, `MembroUrgenciaRenalRepository`, `AnexoRepository`, `UsuarioRepository`, `LogAuditoriaRepository` | Interfaces Spring Data JPA |
-| `service/` | `ProcessoService`, `FluxoProcessoService` + `EtapaFluxo`, `EmailTemplateService` + `EmailTemplate`, `RelatorioService` (PDF), `OficioService` (PDF), `AnexoStorageService`, `SolicitacaoAvaliadorService` (PDF), `Iniciais`, `UsuarioService`, `UsuarioDetailsService`, `AuditoriaService` | Logica de negocio |
-| `web/` | `HomeController`, `ProcessoController`, `MembroController`, `UsuarioController`, `AuditoriaController` | Controllers Spring MVC |
-| `config/` | `SecurityConfig`, `DataSeed`, `DesktopBrowserLauncher` | Configuracoes |
+| Pacote        | Arquivos                                                                                                                                                                                                                                                                                   | Descricao                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| `domain/`     | `Processo`, `Parecer`, `MembroUrgenciaRenal`, `Anexo`, `Usuario`, `LogAuditoria` + enums `StatusProcesso`, `ResultadoParecer`, `TipoAnexo`, `Perfil`                                                                                                                                       | Entidades JPA (sem Lombok, getters/setters simples) |
+| `repository/` | `ProcessoRepository`, `ParecerRepository`, `MembroUrgenciaRenalRepository`, `AnexoRepository`, `UsuarioRepository`, `LogAuditoriaRepository`                                                                                                                                               | Interfaces Spring Data JPA                          |
+| `service/`    | `ProcessoService`, `FluxoProcessoService` + `EtapaFluxo`, `EmailTemplateService` + `EmailTemplate`, `RelatorioService` (PDF), `OficioService` (PDF), `AnexoStorageService`, `SolicitacaoAvaliadorService` (PDF), `Iniciais`, `UsuarioService`, `UsuarioDetailsService`, `AuditoriaService` | Logica de negocio                                   |
+| `web/`        | `HomeController`, `ProcessoController`, `MembroController`, `UsuarioController`, `AuditoriaController`                                                                                                                                                                                     | Controllers Spring MVC                              |
+| `config/`     | `SecurityConfig`, `DataSeed`, `DesktopBrowserLauncher`                                                                                                                                                                                                                                     | Configuracoes                                       |
 
 ### `src/main/resources/`
 
-| Caminho | Descricao |
-|---|---|
-| `templates/layout.html` | Fragments base (head, header, footer, scripts) |
-| `templates/login.html` | Tela de login |
-| `templates/dashboard.html` | Painel com cards e estatisticas |
-| `templates/error.html` | Pagina de erro amigavel |
-| `templates/processos/{lista,form,editar,detalhe}.html` | CRUD de processos |
-| `templates/membros/{lista,form}.html` | CRUD de membros |
-| `templates/usuarios/{lista,form}.html` | CRUD de usuarios (ADMIN) |
-| `templates/auditoria/lista.html` | Log de auditoria (ADMIN) |
-| `static/css/app.css` | CSS customizado |
-| `application.yml` | Configuracao principal |
-| `application-dev.yml` | Dev (H2 file) |
-| `application-prod.yml` | Prod (PostgreSQL/Neon) |
-| `application-desktop.yml` | Desktop (H2 em ~/.sgpur) |
-| `application-local.yml` | **Gitignored** — credenciais Neon reais |
+| Caminho                                                | Descricao                                      |
+| ------------------------------------------------------ | ---------------------------------------------- |
+| `templates/layout.html`                                | Fragments base (head, header, footer, scripts) |
+| `templates/login.html`                                 | Tela de login                                  |
+| `templates/dashboard.html`                             | Painel com cards e estatisticas                |
+| `templates/error.html`                                 | Pagina de erro amigavel                        |
+| `templates/processos/{lista,form,editar,detalhe}.html` | CRUD de processos                              |
+| `templates/membros/{lista,form}.html`                  | CRUD de membros                                |
+| `templates/usuarios/{lista,form}.html`                 | CRUD de usuarios (ADMIN)                       |
+| `templates/auditoria/lista.html`                       | Log de auditoria (ADMIN)                       |
+| `static/css/app.css`                                   | CSS customizado                                |
+| `application.yml`                                      | Configuracao principal                         |
+| `application-dev.yml`                                  | Dev (H2 file)                                  |
+| `application-prod.yml`                                 | Prod (PostgreSQL/Neon)                         |
+| `application-desktop.yml`                              | Desktop (H2 em ~/.sgpur)                       |
+| `application-local.yml`                                | **Gitignored** — credenciais Neon reais        |
 
 ### `src/test/java/br/gov/saude/sgpur/`
 
-| Arquivo | Testes | O que testa |
-|---|---|---|
-| `ProcessoServiceTest.java` | 7 | Regras de negocio (3 medicos, 2/3, numeracao, editar/excluir) |
-| `FluxoProcessoServiceTest.java` | 4 | Etapas do fluxo |
-| `EmailTemplateServiceTest.java` | 3 | Templates de e-mail |
-| `IniciaisTest.java` | 3 | Utilitario de iniciais |
-| `SgpurApplicationTests.java` | 1 | Smoke test |
-| `SecurityIntegrationTest.java` | 4 | Seguranca (integracao) |
-| **Total** | **22** | |
+| Arquivo                         | Testes | O que testa                                                   |
+| ------------------------------- | ------ | ------------------------------------------------------------- |
+| `ProcessoServiceTest.java`      | 7      | Regras de negocio (3 medicos, 2/3, numeracao, editar/excluir) |
+| `FluxoProcessoServiceTest.java` | 4      | Etapas do fluxo                                               |
+| `EmailTemplateServiceTest.java` | 3      | Templates de e-mail                                           |
+| `IniciaisTest.java`             | 3      | Utilitario de iniciais                                        |
+| `SgpurApplicationTests.java`    | 1      | Smoke test                                                    |
+| `SecurityIntegrationTest.java`  | 4      | Seguranca (integracao)                                        |
+| **Total**                       | **22** |                                                               |
 
 ## Funcionalidades implementadas
+
 - Fluxo completo: cadastro -> envio a 3 medicos -> pareceres -> decisao -> oficio
   (se indeferido) -> relatorio final
 - Checklist visual com barra de progresso e "o que falta" por processo
@@ -203,12 +207,14 @@ o dominio e as regras a seguir.
 - Deploy para Oracle Always Free (systemd + Nginx, guia em `deploy/`)
 
 ## Backlog / ideias futuras
+
 - Editar/remover anexo especifico (individual)
 - Deploy em Railway/Render/Fly (alternativa a Oracle)
 - Pipeline CI/CD completa (deploy automatico)
 - Melhorias de UX/UI
 
 ## Como trabalhar
+
 - Antes de codar mudancas de dominio, releia `UrgenciaRenal - 2026.xlsx` e
   `Orientacoes.docx` na raiz do projeto.
 - Mantenha o estilo: entidades sem Lombok, servicos em `service/`, controllers

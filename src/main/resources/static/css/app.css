@@ -326,6 +326,12 @@ body {
 .table td form .form-select,
 .table td form .form-control { width: 100% !important; }
 
+/* Evita estouro de conteúdo em células da tabela: quebra palavras longas e permite wrap */
+.table td { word-break: break-word; white-space: normal; }
+
+/* Botões de anexar respostas: manter texto em uma linha, evitar deslocamento de layout */
+.btn-anexar-resposta { white-space: nowrap; }
+
 /* === Form controls === */
 .form-control, .form-select {
     border-radius: 8px;
@@ -438,6 +444,23 @@ body {
     animation: fadeInUp .3s ease both;
 }
 
+/* === Aba Envio: evita quebra visual por nomes longos de anexos === */
+#pane-envio .list-group-item {
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+#pane-envio .list-group-item > span {
+    min-width: 0;
+    flex: 1 1 320px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+#pane-envio .list-group-item form {
+    flex: 0 0 auto;
+}
+
 /* === Scrollbar personalizada === */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--rs-gray-100); }
@@ -450,4 +473,8 @@ body {
     .wizard-step { min-width: 80px; }
     .wizard::before { display: none; }
     .wizard-step .wizard-label { font-size: .6rem; }
+
+    #pane-envio .list-group-item {
+        align-items: flex-start !important;
+    }
 }
