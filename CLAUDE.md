@@ -49,7 +49,7 @@ Pacote base `br.gov.saude.sgpur`.
   coordenador não tem peso especial para indeferir). O detalhe do processo
   exibe o badge "Deferido pelo Coordenador da CET-RS"
   (`ProcessoService.deferidoPeloCoordenador`). Só 1 membro deve ter
-  `coordenador = true` por vez (seed em `MembroBootstrap`).
+  `coordenador = true` por vez.
 - **Toda resposta de médico recebida** (parecer com `resultado` preenchido)
   **precisa ter o anexo comprobatório** (`TipoAnexo.RESPOSTA_AVALIADOR`
   vinculado ao parecer) **antes de Deferir/Indeferir**. Imposto no serviço e no
