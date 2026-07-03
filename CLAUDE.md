@@ -4,7 +4,7 @@ Sistema de Gestão de Processos de Urgência Renal (SGPUR). Substitui a planilha
 Excel da equipe de Urgência Renal da Secretaria de Saúde.
 
 ## Stack
-Java 21 · Spring Boot 3.3 (web, data-jpa, thymeleaf, security, validation) ·
+Java 21 · Spring Boot 3.5.16 (web, data-jpa, thymeleaf, security, validation) ·
 PostgreSQL/Neon (prod) e H2 (dev) · Thymeleaf + Bootstrap · OpenPDF · Maven.
 Pacote base `br.gov.saude.sgpur`.
 
@@ -20,7 +20,7 @@ Pacote base `br.gov.saude.sgpur`.
 - App em http://localhost:8080 · login inicial `admin` / `admin123` (criado
   automaticamente por `AdminBootstrap` só quando a tabela `usuario` está
   vazia; em prod exige `SGPUR_ADMIN_PASSWORD` via env var, sem default).
-- Testes: `.\test.ps1` (ou `mvn test`) — **105 testes**, sempre com **JDK 21**.
+- Testes: `.\test.ps1` (ou `mvn test`) — **113 testes**, sempre com **JDK 21**.
   Build: `mvn -DskipTests package` (gera o JAR).
 - **Não há mais empacotamento desktop** (`release.ps1`/`package-desktop.ps1`/
   Inno Setup foram removidos em 2026-07-03). O projeto é só web agora — rode
