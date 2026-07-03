@@ -88,8 +88,12 @@ public class RelatorioService {
             // 4. Monta o PDF final com todas as paginas
             byte[] merged = mergeComAnexos(summary, pdfs, naoPdf, p);
 
-            // 5. Adiciona cabecalho e numeracao em todas as paginas
-            return estamparCabecalhoNumeracao(merged, p);
+            // 5. Adiciona cabecalho e numeracao em todas as paginas (mesmo
+            // padrao institucional do Relatorio Anual, via PdfCabecalhoStamper).
+            String iniciais = Iniciais.de(p.getPacienteNome());
+            return PdfCabecalhoStamper.estampar(merged,
+                "Central de Transplantes do Estado do Rio Grande do Sul - URGENCIA RENAL",
+                "Processo CET-RS " + p.getNumero() + " - Paciente " + iniciais);
 
         } catch (Exception e) {
             throw new IllegalStateException("Falha ao gerar o relatorio PDF completo", e);
@@ -321,105 +325,6 @@ public class RelatorioService {
     }
 
     // -----------------------------------------------------------------------
-    // 3. Cabecalho e numeracao
-    // -----------------------------------------------------------------------
-
-    private byte[] estamparCabecalhoNumeracao(byte[] pdf, Processo p)
-            throws DocumentException, IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfReader reader = new PdfReader(pdf);
-        PdfStamper stamper = new PdfStamper(reader, baos);
-
-        // Carrega o logo do RS
-        Image logo = null;
-        try {
-            byte[] logoBytes = getClass().getClassLoader()
-                .getResourceAsStream("static/brasao.png").readAllBytes();
-            logo = Image.getInstance(logoBytes);
-        } catch (Exception e) {
-            log.warn("Logo nao encontrado em static/brasao.png, cabecalho sem imagem");
-        }
-
-        String linha1 = "Central de Transplantes do Estado do Rio Grande do Sul - URGENCIA RENAL";
-        String iniciais = Iniciais.de(p.getPacienteNome());
-        String linha2 = "Processo CET-RS " + p.getNumero() + " - Paciente " + iniciais;
-
-        BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
-        float margemEsq = 40;
-        float margemDir = 40;
-        int totalPaginas = reader.getNumberOfPages();
-
-        float logoSize = 33;
-        float logoMargem = 36;
-        // Altura reservada ao cabecalho: some-se ao MediaBox de cada pagina
-        // (em vez de sobrepor o conteudo existente) para garantir que o
-        // conteudo original - inclusive de PDFs anexados com margens
-        // proprias diferentes - comece sempre abaixo do cabecalho.
-        float alturaCabecalho = 55;
-
-        for (int i = 1; i <= totalPaginas; i++) {
-            // Usa as dimensoes REAIS de cada pagina (evita cabecalho cortado
-            // em paginas com tamanho diferente de A4 ex.: de anexos escaneados)
-            Rectangle pageSize = reader.getPageSize(i);
-            float largura = pageSize.getWidth();
-            float novaAltura = pageSize.getHeight() + alturaCabecalho;
-
-            // O conteudo original permanece ancorado na base (coordenadas
-            // inalteradas); aumentar o MediaBox no topo apenas abre espaco
-            // em branco para o cabecalho, sem deslocar/sobrepor nada.
-            PdfDictionary pageDict = reader.getPageN(i);
-            PdfRectangle novoMediaBox = new PdfRectangle(0, 0, largura, novaAltura);
-            pageDict.put(PdfName.MEDIABOX, novoMediaBox);
-            pageDict.put(PdfName.CROPBOX, novoMediaBox);
-
-            float topo = novaAltura;
-            float largUtil = largura - margemEsq - margemDir;
-
-            PdfContentByte over = stamper.getOverContent(i);
-
-            // Logo do RS (canto superior esquerdo)
-            if (logo != null) {
-                Image img = Image.getInstance(logo);
-                img.setAbsolutePosition(margemEsq, topo - logoMargem);
-                img.scaleToFit(logoSize, logoSize);
-                over.addImage(img);
-            }
-
-            // Texto do cabecalho (a direita do logo)
-            float textoX = margemEsq + logoSize + 6;
-            float textoLarg = largUtil - logoSize - 6;
-
-            over.beginText();
-            over.setFontAndSize(bf, 10);
-            over.showTextAligned(Element.ALIGN_CENTER, linha1,
-                textoX + textoLarg / 2, topo - 20, 0);
-            over.setFontAndSize(bf, 10);
-            over.showTextAligned(Element.ALIGN_CENTER, linha2,
-                textoX + textoLarg / 2, topo - 35, 0);
-            over.endText();
-
-            // Linha separadora fina abaixo do cabecalho
-            over.setLineWidth(0.5f);
-            over.setColorStroke(new Color(180, 180, 180));
-            over.moveTo(margemEsq, topo - 44);
-            over.lineTo(largura - margemDir, topo - 44);
-            over.stroke();
-
-            // Numeracao (canto inferior direito)
-            over.beginText();
-            over.setFontAndSize(bf, 9);
-            over.showTextAligned(Element.ALIGN_RIGHT,
-                "Pagina " + i + " de " + totalPaginas,
-                pageSize.getWidth() - margemDir, 22, 0);
-            over.endText();
-        }
-
-        stamper.close();
-        reader.close();
-        return baos.toByteArray();
-    }
-
-    // -----------------------------------------------------------------------
     // Capa do relatorio / processo
     // -----------------------------------------------------------------------
 
@@ -455,7 +360,7 @@ public class RelatorioService {
             byte[] logoBytes = getClass().getClassLoader()
                 .getResourceAsStream("static/brasao.png").readAllBytes();
             Image brasao = Image.getInstance(logoBytes);
-            brasao.scaleToFit(55, 55);
+            brasao.scaleToFit(110, 110);
             brasao.setAlignment(Element.ALIGN_CENTER);
             brasao.setSpacingAfter(12);
             doc.add(brasao);
@@ -463,23 +368,18 @@ public class RelatorioService {
             log.warn("Logo nao encontrado em static/brasao.png, capa sem imagem");
         }
 
-        Paragraph orgao = new Paragraph("ESTADO DO RIO GRANDE DO SUL", fOrgao);
+        Paragraph orgao = new Paragraph("Central de Transplantes do Estado do Rio Grande do Sul", fOrgao);
         orgao.setAlignment(Element.ALIGN_CENTER);
         doc.add(orgao);
 
-        Paragraph secretaria = new Paragraph("SECRETARIA DA SAUDE", fSubOrgao);
+        Paragraph secretaria = new Paragraph("SECRETARIA DE SAUDE", fSubOrgao);
         secretaria.setAlignment(Element.ALIGN_CENTER);
         doc.add(secretaria);
 
-        Paragraph central = new Paragraph("CENTRAL ESTADUAL DE TRANSPLANTES", fSubOrgao);
-        central.setAlignment(Element.ALIGN_CENTER);
-        doc.add(central);
-
-        Font fSolicitacaoAzul = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, AZUL);
-        Paragraph solicitacao = new Paragraph("SOLICITACAO DE URGENCIA RENAL", fSolicitacaoAzul);
-        solicitacao.setAlignment(Element.ALIGN_CENTER);
-        solicitacao.setSpacingAfter(30);
-        doc.add(solicitacao);
+        Paragraph urgenciaRenal = new Paragraph("URGENCIA RENAL", fUrgencia);
+        urgenciaRenal.setAlignment(Element.ALIGN_CENTER);
+        urgenciaRenal.setSpacingAfter(36);
+        doc.add(urgenciaRenal);
 
         PdfPTable separador = new PdfPTable(1);
         separador.setWidthPercentage(60);

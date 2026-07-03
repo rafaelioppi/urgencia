@@ -7,12 +7,11 @@ import br.gov.saude.sgpur.domain.StatusProcesso;
 import br.gov.saude.sgpur.service.TempoRespostaService.ResumoTempo;
 import br.gov.saude.sgpur.service.TempoRespostaService.TempoMembro;
 import com.lowagie.text.*;
-import com.lowagie.text.pdf.ColumnText;
-import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -28,11 +27,16 @@ import java.util.Map;
  * Gera o Relatorio Geral (anual) de Urgencia Renal em PDF: um resumo com a
  * contagem por status do ano e a lista completa dos processos daquele ano.
  *
- * Mantem o mesmo padrao visual do {@link RelatorioService} (capa institucional,
- * barras de secao azuis, tabelas com bordas claras).
+ * Mantem o mesmo padrao visual do {@link RelatorioService} (capa institucional
+ * com brasao, barras de secao azuis, tabelas com bordas claras) e o MESMO
+ * cabecalho estampado em toda pagina (logo + 2 linhas + numeracao "Pagina X de
+ * Y"), via {@link PdfCabecalhoStamper} - documento gerado normalmente e depois
+ * estampado como pos-processamento, igual ao Relatorio Final.
  */
 @Service
 public class RelatorioAnualService {
+
+    private static final Logger log = LoggerFactory.getLogger(RelatorioAnualService.class);
 
     private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -54,16 +58,17 @@ public class RelatorioAnualService {
      * @param processos processos do ano (ja ordenados por sequencial)
      */
     public byte[] gerar(int ano, List<Processo> processos) {
+        byte[] semCabecalho = gerarSemCabecalho(ano, processos);
+        return PdfCabecalhoStamper.estampar(semCabecalho,
+            "Central de Transplantes do Estado do Rio Grande do Sul - URGENCIA RENAL",
+            "Relatorio Geral de Urgencia Renal - Ano " + ano);
+    }
+
+    private byte[] gerarSemCabecalho(int ano, List<Processo> processos) {
         Document doc = new Document(PageSize.A4, 36, 36, 46, 36);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            PdfWriter writer = PdfWriter.getInstance(doc, out);
-            // Cabecalho institucional repetido em toda pagina a partir da 2a
-            // (a capa ja tem o bloco institucional completo). Padrao usado nos
-            // demais documentos do sistema (Oficio, Relatorio Final, carimbo
-            // do avaliador): "Central de Transplantes do Estado do Rio Grande
-            // do Sul - URGENCIA RENAL".
-            writer.setPageEvent(new CabecalhoPagina(ano));
+            PdfWriter.getInstance(doc, out);
             doc.open();
 
             adicionarCapa(doc, ano, processos);
@@ -129,8 +134,21 @@ public class RelatorioAnualService {
         Font fSub = FontFactory.getFont(FontFactory.HELVETICA, 11, CINZA);
 
         Paragraph espaco = new Paragraph(" ");
-        espaco.setSpacingAfter(80);
+        espaco.setSpacingAfter(40);
         doc.add(espaco);
+
+        // Brasao do RS no topo da capa - mesmo padrao do Relatorio Final.
+        try {
+            byte[] logoBytes = getClass().getClassLoader()
+                .getResourceAsStream("static/brasao.png").readAllBytes();
+            Image brasao = Image.getInstance(logoBytes);
+            brasao.scaleToFit(110, 110);
+            brasao.setAlignment(Element.ALIGN_CENTER);
+            brasao.setSpacingAfter(12);
+            doc.add(brasao);
+        } catch (Exception e) {
+            log.warn("Logo nao encontrado em static/brasao.png, capa do relatorio anual sem imagem");
+        }
 
         Paragraph orgao = new Paragraph("Central de Transplantes do Estado do Rio Grande do Sul", fOrgao);
         orgao.setAlignment(Element.ALIGN_CENTER);
@@ -346,37 +364,5 @@ public class RelatorioAnualService {
 
     private String nvl(String s) {
         return (s == null || s.isBlank()) ? "-" : s;
-    }
-
-    // -----------------------------------------------------------------------
-    // Cabecalho repetido em toda pagina (a partir da 2a) - mesmo padrao
-    // institucional usado no Oficio, Relatorio Final e no carimbo do avaliador.
-    // -----------------------------------------------------------------------
-
-    private static final class CabecalhoPagina extends PdfPageEventHelper {
-        private final int ano;
-        private final Font fLinha1 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, CINZA);
-        private final Font fLinha2 = FontFactory.getFont(FontFactory.HELVETICA, 7, CINZA);
-
-        CabecalhoPagina(int ano) {
-            this.ano = ano;
-        }
-
-        @Override
-        public void onEndPage(PdfWriter writer, Document document) {
-            if (writer.getPageNumber() == 1) {
-                return; // capa ja tem o bloco institucional completo
-            }
-            PdfContentByte cb = writer.getDirectContent();
-            Rectangle pagina = document.getPageSize();
-            float centroX = (pagina.getLeft() + pagina.getRight()) / 2f;
-            float topoY = pagina.getTop() - 20;
-            ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
-                new Phrase("Central de Transplantes do Estado do Rio Grande do Sul - URGENCIA RENAL", fLinha1),
-                centroX, topoY, 0);
-            ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
-                new Phrase("Relatorio Geral de Urgencia Renal - Ano " + ano, fLinha2),
-                centroX, topoY - 10, 0);
-        }
     }
 }
