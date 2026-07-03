@@ -48,12 +48,15 @@ class SecurityIntegrationTest {
     @Test
     @WithMockUser(roles = "OPERADOR")
     void operadorNaoAcessaAreasDeAdmin() throws Exception {
+        // /usuarios (cadastro de LOGINS) e /auditoria continuam exclusivos do ADMIN.
         mvc.perform(get("/usuarios")).andExpect(status().isForbidden());
         mvc.perform(get("/auditoria")).andExpect(status().isForbidden());
-        mvc.perform(get("/membros")).andExpect(status().isForbidden());
-        mvc.perform(get("/relatorios/anual")).andExpect(status().isForbidden());
-        // mas acessa a area operacional normal
+        // mas acessa a area operacional normal, incluindo membros e relatorios
+        // (comentario da classe: "OPERADOR: acesso operacional a processos,
+        // membros, relatorios").
         mvc.perform(get("/processos")).andExpect(status().isOk());
+        mvc.perform(get("/membros")).andExpect(status().isOk());
+        mvc.perform(get("/relatorios/anual")).andExpect(status().isOk());
     }
 
     @Test

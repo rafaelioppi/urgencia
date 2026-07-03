@@ -52,7 +52,11 @@ public class SecurityConfig {
                 // OPERADOR/AVALIADOR ficariam sem como trocar a propria senha.
                 .requestMatchers("/usuarios/minha-senha").authenticated()
                 .requestMatchers("/usuarios/**", "/auditoria/**").hasRole("ADMIN")
-                .requestMatchers("/membros/**", "/relatorios/**").hasRole("ADMIN")
+                // Membros e relatorios sao "acesso operacional" (comentario da classe):
+                // OPERADOR tem acesso completo (criar/editar/inativar membros, gerar
+                // relatorios), igual ao ADMIN. So /usuarios/** (cadastro de LOGINS) e
+                // /auditoria/** ficam exclusivos do ADMIN.
+                .requestMatchers("/membros/**", "/relatorios/**").hasAnyRole("ADMIN", "OPERADOR")
                 .requestMatchers("/controle-urgencias/**").hasAnyRole("ADMIN", "OPERADOR")
                 .requestMatchers("/", "/processos/**").hasAnyRole("ADMIN", "OPERADOR")
                 .requestMatchers("/avaliador/**").hasRole("AVALIADOR")
