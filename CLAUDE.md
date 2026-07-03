@@ -117,7 +117,12 @@ Pacote base `br.gov.saude.sgpur`.
   `SolicitacaoAvaliadorService.gerar` (folha-rosto) **permanece no código mas não
   é mais chamado** no fluxo de envio. Os documentos clínicos são anexados na
   própria aba Envio (`POST /processos/{id}/documento-clinico`). **Aviso (não
-  bloqueia)** se algum médico for da mesma equipe/instituição do solicitante.
+  bloqueia)** se algum médico for da mesma equipe/instituição do solicitante —
+  `ConflitoEquipeMatcher.mesmaEquipe(instituicaoMembro, solicitanteEquipe)`
+  ignora maiúsculas/acentos e casa sigla × nome por extenso × cidade via mapa
+  de apelidos por sigla (`ALIASES`); usa palavra/frase inteira (não substring).
+  Instituições novas fora do `ALIASES` caem no match por tokens da própria
+  sigla — ao cadastrar uma nova instituição relevante, enriquecer o `ALIASES`.
 - Numeração `NN/AAAA`: **manual em 2026**, **automática a partir de 2027**.
 - Fluxo por e-mail com anexos por etapa. **Identificação do paciente:** o
   e-mail/material aos **médicos avaliadores oculta o nome** do paciente (só

@@ -300,13 +300,14 @@
             <div class="card mb-4" id="envio">
                 <div class="card-header"><i class="bi bi-send"></i> Envio aos Avaliadores</div>
                 <div class="card-body">
-                    <!-- Aviso: medico da mesma equipe/instituicao do solicitante (nao bloqueia) -->
+                    <!-- Aviso: medico da mesma equipe/instituicao do solicitante (NAO bloqueia) -->
                     <div th:if="${!medicosMesmaEquipe.isEmpty()}" class="alert alert-warning py-2 mb-3">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Atencao: ha avaliador(es) possivelmente da mesma equipe/instituicao do
-                        solicitante (<span th:text="${processo.solicitanteEquipe}">equipe</span>):
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Possivel conflito de interesse.</strong>
+                        Avaliador(es) aparentemente da mesma equipe/instituicao do solicitante
+                        (<span th:text="${processo.solicitanteEquipe}">equipe</span>):
                         <strong th:text="${#strings.listJoin(medicosMesmaEquipe, '; ')}">medicos</strong>.
-                        Confirme se nao ha conflito de interesse antes de enviar.
+                        Confira antes de enviar &mdash; o envio nao e bloqueado, apenas sinalizado.
                     </div>
 
                     <!-- Status do envio (se ja registrado) -->

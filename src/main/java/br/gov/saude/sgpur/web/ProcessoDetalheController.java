@@ -4,6 +4,7 @@ import br.gov.saude.sgpur.domain.*;
 import br.gov.saude.sgpur.repository.MembroUrgenciaRenalRepository;
 import br.gov.saude.sgpur.service.AnexoStorageService;
 import br.gov.saude.sgpur.service.AuditoriaService;
+import br.gov.saude.sgpur.service.ConflitoEquipeMatcher;
 import br.gov.saude.sgpur.service.EmailTemplateService;
 import br.gov.saude.sgpur.service.FluxoProcessoService;
 import br.gov.saude.sgpur.service.GeminiService;
@@ -34,6 +35,7 @@ public class ProcessoDetalheController {
     private final AnexoStorageService anexoStorage;
     private final AuditoriaService auditoria;
     private final GeminiService geminiService;
+    private final ConflitoEquipeMatcher conflitoEquipeMatcher;
 
     public ProcessoDetalheController(ProcessoService processoService,
                                      FluxoProcessoService fluxoService,
@@ -41,7 +43,8 @@ public class ProcessoDetalheController {
                                      MembroUrgenciaRenalRepository membroRepository,
                                      AnexoStorageService anexoStorage,
                                      AuditoriaService auditoria,
-                                     GeminiService geminiService) {
+                                     GeminiService geminiService,
+                                     ConflitoEquipeMatcher conflitoEquipeMatcher) {
         this.processoService = processoService;
         this.fluxoService = fluxoService;
         this.emailTemplateService = emailTemplateService;
@@ -49,6 +52,7 @@ public class ProcessoDetalheController {
         this.anexoStorage = anexoStorage;
         this.auditoria = auditoria;
         this.geminiService = geminiService;
+        this.conflitoEquipeMatcher = conflitoEquipeMatcher;
     }
 
     /**
@@ -177,22 +181,16 @@ public class ProcessoDetalheController {
             .filter(a -> a.getTipo() == TipoAnexo.DOCUMENTO_CLINICO_AVALIADOR)
             .collect(java.util.stream.Collectors.toList());
         model.addAttribute("documentosClinicos", documentosClinicos);
-        // Aviso (nao bloqueia): medicos da mesma equipe/instituicao do solicitante
-        java.util.List<String> medicosMesmaEquipe = java.util.Collections.emptyList();
+        // Aviso (nao bloqueia): medicos possivelmente da mesma equipe/instituicao
+        // do solicitante (casa sigla x nome por extenso x cidade, ignorando
+        // acentos/maiusculas - ver ConflitoEquipeMatcher).
         String equipe = p.getSolicitanteEquipe();
-        if (equipe != null && !equipe.isBlank()) {
-            String alvo = equipe.trim().toLowerCase();
-            medicosMesmaEquipe = p.getPareceres().stream()
-                .map(par -> par.getMembro())
-                .filter(m -> m.getInstituicao() != null && !m.getInstituicao().isBlank())
-                .filter(m -> {
-                    String inst = m.getInstituicao().trim().toLowerCase();
-                    return inst.contains(alvo) || alvo.contains(inst);
-                })
-                .map(m -> m.getNome() + " (" + m.getInstituicao() + ")")
-                .distinct()
-                .collect(java.util.stream.Collectors.toList());
-        }
+        java.util.List<String> medicosMesmaEquipe = p.getPareceres().stream()
+            .map(Parecer::getMembro)
+            .filter(m -> conflitoEquipeMatcher.mesmaEquipe(m.getInstituicao(), equipe))
+            .map(m -> m.getNome() + " (" + m.getInstituicao() + ")")
+            .distinct()
+            .collect(java.util.stream.Collectors.toList());
         model.addAttribute("medicosMesmaEquipe", medicosMesmaEquipe);
 
         // --- Gating das abas (passo 1..5) e sub-rotulo de status ---
