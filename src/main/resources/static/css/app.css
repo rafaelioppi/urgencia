@@ -53,11 +53,20 @@ body {
 
 .navbar-sgpur .navbar-brand {
     letter-spacing: -0.02em;
+    color: #fff;
 }
 
+/* Fontes claras sobre o fundo azul forte do menu (o Bootstrap padrao usaria
+   links escuros, quase ilegiveis). navbar-dark ja ajuda; reforcamos o contraste. */
 .navbar-sgpur .nav-link {
     position: relative;
     transition: var(--rs-transition);
+    color: rgba(255,255,255,.85);
+}
+
+.navbar-sgpur .nav-link:hover,
+.navbar-sgpur .nav-link.active {
+    color: #fff;
 }
 
 .navbar-sgpur .nav-link::after {
@@ -76,6 +85,13 @@ body {
 .navbar-sgpur .nav-link.active::after { width: 80%; }
 
 .navbar-sgpur .nav-link:hover { opacity: .9; }
+
+/* Linha de membro/usuario inativo: fundo cinza bem claro + texto atenuado,
+   para distinguir discretamente na listagem sem chamar atencao. */
+tr.linha-inativa > td {
+    background: var(--rs-gray-50);
+    color: var(--rs-gray-500);
+}
 
 /* === Cards aprimorados === */
 .card {

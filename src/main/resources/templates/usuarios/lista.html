@@ -19,7 +19,7 @@
             <tr><th>Login</th><th>Nome</th><th>Perfil</th><th>Situacao</th><th></th></tr>
             </thead>
             <tbody>
-            <tr th:each="u : ${usuarios}">
+            <tr th:each="u : ${usuarios}" th:classappend="${!u.ativo} ? 'linha-inativa'">
                 <td th:text="${u.username}">login</td>
                 <td th:text="${u.nome}">Nome</td>
                 <td><span class="badge bg-secondary" th:text="${u.perfil.descricao}">Perfil</span></td>

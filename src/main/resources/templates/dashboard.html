@@ -19,7 +19,8 @@
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-800">Painel da Urgencia Renal</h1>
-            <p class="text-sm text-slate-500">Acompanhe, em tempo real, para quais medicos cada
+            <p class="text-sm text-slate-500">Dados do ano corrente
+                (<span th:text="${anoCorrente}">2026</span>): acompanhe para quais medicos cada
                 solicitacao foi enviada e a situacao de cada parecer.</p>
         </div>
         <a th:href="@{/processos/novo}"

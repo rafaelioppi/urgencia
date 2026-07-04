@@ -49,7 +49,7 @@
                 <th>Situacao</th><th></th></tr>
             </thead>
             <tbody>
-            <tr th:each="m : ${membros}">
+            <tr th:each="m : ${membros}" th:classappend="${!m.ativo} ? 'linha-inativa'">
                 <td th:text="${m.instituicao}">SIGLA</td>
                 <td th:text="${m.nome}">Nome
                     <span th:if="${m.coordenador}" class="badge bg-warning text-dark ms-1">Coordenador</span>

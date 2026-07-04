@@ -13,19 +13,28 @@
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
                 <thead class="table-light">
-                <tr><th>Data/hora</th><th>Usuario</th><th>Acao</th><th>Detalhe</th><th>IP</th></tr>
+                <tr><th>Hora</th><th>Usuario</th><th>Acao</th><th>Detalhe</th><th>IP</th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="log : ${logs.content}">
-                    <td class="small text-nowrap"
-                        th:text="${#temporals.format(log.dataHora, 'dd/MM/yyyy HH:mm:ss')}">data</td>
-                    <td th:text="${log.usuario}">usuario</td>
-                    <td><span class="badge bg-secondary" th:text="${log.acao}">ACAO</span></td>
-                    <td class="small" th:text="${log.detalhe}">detalhe</td>
-                    <td class="small font-monospace text-muted"
-                        th:text="${log.ip != null} ? ${log.ip} : '-'">-</td>
-                </tr>
-                <tr th:if="${logs.empty}">
+                <th:block th:each="grupo : ${gruposPorDia}">
+                    <!-- Cabecalho do dia -->
+                    <tr class="table-light">
+                        <td colspan="5" class="small fw-semibold text-muted">
+                            <i class="bi bi-calendar3 me-1"></i>
+                            <span th:text="${#temporals.format(grupo.key, 'dd/MM/yyyy')}">01/01/2026</span>
+                        </td>
+                    </tr>
+                    <tr th:each="log : ${grupo.value}">
+                        <td class="small text-nowrap"
+                            th:text="${#temporals.format(log.dataHora, 'HH:mm:ss')}">hora</td>
+                        <td th:text="${log.usuario}">usuario</td>
+                        <td><span class="badge bg-secondary" th:text="${log.acao}">ACAO</span></td>
+                        <td class="small" th:text="${log.detalhe}">detalhe</td>
+                        <td class="small font-monospace text-muted"
+                            th:text="${log.ip != null} ? ${log.ip} : '-'">-</td>
+                    </tr>
+                </th:block>
+                <tr th:if="${gruposPorDia.isEmpty()}">
                     <td colspan="5" class="text-center text-muted py-4">Nenhum registro de auditoria.</td>
                 </tr>
                 </tbody>

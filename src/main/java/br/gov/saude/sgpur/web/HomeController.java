@@ -1,7 +1,6 @@
 package br.gov.saude.sgpur.web;
 
 import br.gov.saude.sgpur.domain.Processo;
-import br.gov.saude.sgpur.domain.StatusProcesso;
 import br.gov.saude.sgpur.repository.MembroUrgenciaRenalRepository;
 import br.gov.saude.sgpur.repository.ProcessoRepository;
 import br.gov.saude.sgpur.service.FluxoProcessoService;
@@ -40,31 +39,51 @@ public class HomeController {
 
     @GetMapping("/")
     public String dashboard(Model model) {
-        model.addAttribute("totalProcessos", processoRepository.count());
-        model.addAttribute("deferidos", processoRepository.countByStatus(StatusProcesso.DEFERIDO));
-        model.addAttribute("indeferidos", processoRepository.countByStatus(StatusProcesso.INDEFERIDO));
-        model.addAttribute("cancelados", processoRepository.countByStatus(StatusProcesso.CANCELADO));
-        model.addAttribute("membrosAtivos", membroRepository.countByAtivoTrue());
+        // Painel focado no ANO CORRENTE: contadores e planilha refletem apenas os
+        // processos deste ano. Carrega uma vez (com pareceres/medicos, fetch join)
+        // e agrega em Java, seguindo a convencao do projeto.
+        int anoCorrente = java.time.Year.now().getValue();
+        model.addAttribute("anoCorrente", anoCorrente);
 
-        // Planilha do painel: todos os processos com os 3 medicos e o status
-        // de cada parecer (Favoravel / Desfavoravel / Aguardando / ...).
-        List<Processo> processos = processoRepository.findAllComPareceres();
-        List<PainelLinha> linhas = processos.stream().map(PainelLinha::de).toList();
-        model.addAttribute("linhas", linhas);
+        List<Processo> processos = processoRepository.findByAnoComPareceres(anoCorrente).stream()
+            // "mais recente primeiro" no painel (a query vem em sequencial asc)
+            .sorted(java.util.Comparator.comparing(Processo::getSequencial,
+                java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+            .toList();
 
-        // "Em andamento" agrupa os status nao finais (SOLICITADO, ENVIADO,
-        // EM_ANALISE, SOLICITA_INFORMACAO). O que falta por processo reusa o
-        // FluxoProcessoService.
+        long deferidos = 0;
+        long indeferidos = 0;
+        long cancelados = 0;
         long emAndamento = 0;
         Map<Long, String> pendencias = new LinkedHashMap<>();
         for (Processo p : processos) {
+            switch (p.getStatus()) {
+                case DEFERIDO -> deferidos++;
+                case INDEFERIDO -> indeferidos++;
+                case CANCELADO -> cancelados++;
+                default -> { }
+            }
+            // "Em andamento" agrupa os status nao finais (SOLICITADO, ENVIADO,
+            // EM_ANALISE, SOLICITA_INFORMACAO). O que falta por processo reusa o
+            // FluxoProcessoService.
             if (p.getStatus().isEmAndamento()) {
                 emAndamento++;
                 pendencias.put(p.getId(), fluxoService.resumoPendencia(p));
             }
         }
+
+        model.addAttribute("totalProcessos", processos.size());
+        model.addAttribute("deferidos", deferidos);
+        model.addAttribute("indeferidos", indeferidos);
+        model.addAttribute("cancelados", cancelados);
         model.addAttribute("emAndamento", emAndamento);
         model.addAttribute("pendencias", pendencias);
+        model.addAttribute("membrosAtivos", membroRepository.countByAtivoTrue());
+
+        // Planilha do painel: os processos do ano com os 3 medicos e o status
+        // de cada parecer (Favoravel / Desfavoravel / Aguardando / ...).
+        List<PainelLinha> linhas = processos.stream().map(PainelLinha::de).toList();
+        model.addAttribute("linhas", linhas);
 
         // Indicador: tempo de resposta medio total dos avaliadores.
         ResumoTempo tempo = tempoRespostaService.calcular();
