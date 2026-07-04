@@ -86,11 +86,16 @@ body {
 
 .navbar-sgpur .nav-link:hover { opacity: .9; }
 
-/* Linha de membro/usuario inativo: fundo cinza bem claro + texto atenuado,
-   para distinguir discretamente na listagem sem chamar atencao. */
+/* Linha de membro/usuario inativo: fundo cinza visivel + faixa lateral e texto
+   atenuado, para distinguir claramente na listagem sem ser gritante.
+   !important vence a cor de fundo que o Bootstrap aplica na tabela (--bs-table-bg). */
 tr.linha-inativa > td {
-    background: var(--rs-gray-50);
-    color: var(--rs-gray-500);
+    background-color: var(--rs-gray-200) !important;
+    color: var(--rs-gray-600);
+}
+
+tr.linha-inativa > td:first-child {
+    box-shadow: inset 3px 0 0 0 var(--rs-gray-400);
 }
 
 /* === Cards aprimorados === */
