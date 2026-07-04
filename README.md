@@ -1,4 +1,4 @@
-# SGPUR — Sistema de Gestão de Processos de Urgência Renal
+# SAUR — Sistema de Gestão de Processos de Urgência Renal
 
 [![CI](https://github.com/RafaelEliasIoppi/urgencia/actions/workflows/ci.yml/badge.svg)](https://github.com/RafaelEliasIoppi/urgencia/actions/workflows/ci.yml)
 

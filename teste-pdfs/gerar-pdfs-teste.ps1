@@ -13,7 +13,7 @@ endstream
 endobj
 5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
 6 0 obj<</Length 60>>stream
-BT /F1 10 Tf 50 700 Td (SGPUR - Documento de teste gerado em $(Get-Date -Format 'dd/MM/yyyy HH:mm')) Tj ET
+BT /F1 10 Tf 50 700 Td (SAUR - Documento de teste gerado em $(Get-Date -Format 'dd/MM/yyyy HH:mm')) Tj ET
 endstream
 endobj
 xref
@@ -63,7 +63,7 @@ $([byte[]][char[]]"x")0000
     Write-Host "  [+] $Path"
 }
 
-Write-Host "=== Gerando PDFs de teste para o SGPUR ===" -ForegroundColor Green
+Write-Host "=== Gerando PDFs de teste para o SAUR ===" -ForegroundColor Green
 Write-Host ""
 
 # Passo 1 - Recebimento

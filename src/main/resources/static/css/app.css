@@ -1,18 +1,25 @@
 /* === SAUR - Tema Urgencia Renal === */
 /* Paleta SAUR: azul #1a4d8f (primaria), ouro #f5a623, verde #2d8546 */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* A fonte Inter e carregada via <link rel="preconnect"/"stylesheet"> no
+   layout.html (nao por @import, que e render-blocking). Fallback: system-ui. */
 
 :root {
     --rs-blue: #1a4d8f;
+    --rs-blue-rgb: 26,77,143;       /* componentes do --rs-blue, para uso em rgba() */
     --rs-blue-light: #e3edf7;
     --rs-blue-dark: #0f3163;
     --rs-gold: #f5a623;
     --rs-gold-light: #fef3e2;
+    --rs-gold-dark: #755a12;        /* texto de badge/alert ouro com contraste AA */
     --rs-green: #2d8546;
     --rs-green-light: #e8f5ed;
+    --rs-green-dark: #1f6b36;       /* texto de badge/alert verde com contraste AA */
+    --rs-green-bright: #38a169;     /* acento da barra de progresso concluida */
     --rs-red: #c62828;
     --rs-red-light: #fce8e8;
+    --rs-red-dark: #8b1a1a;         /* texto de alert vermelho */
+    --rs-info-light: #e8f0fe;
+    --rs-info-dark: #003366;
     --rs-gray-50: #f8fafc;
     --rs-gray-100: #f1f5f9;
     --rs-gray-200: #e2e8f0;
@@ -26,12 +33,13 @@
     --rs-shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
     --rs-shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
     --rs-shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
-    --rs-transition: all .2s ease;
+    /* Lista explicita (nao 'all') para nao animar propriedades de layout */
+    --rs-transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: linear-gradient(135deg, var(--rs-gray-50) 0%, var(--rs-gray-100) 100%);
     min-height: 100vh;
     color: var(--rs-gray-800);
 }
@@ -60,7 +68,7 @@ body {
     width: 0;
     height: 2px;
     background: var(--rs-gold);
-    transition: var(--rs-transition);
+    transition: width .2s ease;  /* animacao intencional de largura do sublinhado */
     transform: translateX(-50%);
 }
 
@@ -71,8 +79,11 @@ body {
 
 /* === Cards aprimorados === */
 .card {
+    /* raio via variaveis do Bootstrap: o proprio .card-header herda o
+       inner-radius e nao precisa mais de border-radius com !important */
+    --bs-card-border-radius: 12px;
+    --bs-card-inner-border-radius: 11px;
     border: none;
-    border-radius: 12px;
     box-shadow: var(--rs-shadow);
     transition: var(--rs-transition);
 }
@@ -85,7 +96,6 @@ body {
     font-weight: 600;
     font-size: .875rem;
     padding: .75rem 1rem;
-    border-radius: 12px 12px 0 0 !important;
 }
 
 /* === Tabela de pareceres (respostas dos avaliadores) === */
@@ -94,43 +104,44 @@ body {
     table-layout: auto;
     border-collapse: separate;
     border-spacing: 0;
+    font-size: .8125rem;
 }
 .tabela-pareceres thead th {
-    padding: .6rem .75rem;
-    font-size: .75rem;
+    padding: .45rem .6rem;
+    font-size: .7rem;
     text-transform: uppercase;
     letter-spacing: .03em;
-    color: var(--rs-gray-500, #6c757d);
-    background: var(--rs-gray-100, #f8f9fa);
-    border-bottom: 2px solid var(--rs-gray-200, #e9ecef);
+    color: var(--rs-gray-500);
+    background: var(--rs-gray-100);
+    border-bottom: 2px solid var(--rs-gray-200);
     white-space: nowrap;
 }
 .tabela-pareceres tbody td {
-    padding: .9rem .75rem;
+    padding: .5rem .6rem;
     vertical-align: middle;
-    line-height: 1.5;
-    border-bottom: 1px solid var(--rs-gray-200, #e9ecef);
+    line-height: 1.35;
+    border-bottom: 1px solid var(--rs-gray-200);
 }
 .tabela-pareceres tbody tr:hover td {
-    background: var(--rs-gray-100, #f8f9fa);
+    background: var(--rs-gray-100);
 }
 .tabela-pareceres th:first-child,
 .tabela-pareceres td:first-child {
-    padding-left: 1rem;
+    padding-left: .75rem;
 }
 .tabela-pareceres th:last-child,
 .tabela-pareceres td:last-child {
-    padding-right: 1rem;
+    padding-right: .75rem;
 }
 /* Coluna Medico: nome inteiro sem quebra agressiva, com peso visual */
 .tabela-pareceres td:first-child {
     font-weight: 600;
-    min-width: 180px;
+    min-width: 160px;
 }
 .tabela-pareceres th:nth-child(2),
 .tabela-pareceres td:nth-child(2) {
     white-space: normal;
-    min-width: 150px;
+    min-width: 110px;
 }
 /* Colunas Data / Origem / Resposta: nao deixar espremer */
 .tabela-pareceres th:nth-child(3),
@@ -143,8 +154,19 @@ body {
 }
 .tabela-pareceres th:nth-child(6),
 .tabela-pareceres td:nth-child(6) {
-    min-width: 240px;
-    max-width: 300px;
+    min-width: 210px;
+    max-width: 260px;
+}
+.tabela-pareceres .badge {
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .3em .55em;
+}
+/* Tipografia/espacamento compactos dos controles: ver bloco ".acao-form"
+   (layout flex) mais abaixo, na secao "Acao column na tabela de pareceres". */
+.tabela-pareceres .btn-sm {
+    font-size: .75rem;
+    padding: .25rem .5rem;
 }
 
 /* === Wizard horizontal (passo a passo) === */
@@ -219,11 +241,17 @@ body {
     background: var(--rs-blue);
     border-color: var(--rs-blue);
     color: #fff;
-    box-shadow: 0 0 0 4px rgba(0,75,135,.2);
+    box-shadow: 0 0 0 4px rgba(var(--rs-blue-rgb),.2);
     animation: pulse-ring 2s infinite;
 }
 
 .wizard-step.atual .wizard-label { color: var(--rs-blue); font-weight: 700; }
+
+/* Foco por teclado visivel na navegacao do wizard */
+.wizard-step:focus-visible { outline: none; }
+.wizard-step:focus-visible .wizard-circle {
+    box-shadow: 0 0 0 3px rgba(var(--rs-blue-rgb),.35);
+}
 
 /* Bloqueada */
 .wizard-step.bloqueada { opacity: .5; cursor: not-allowed; }
@@ -231,9 +259,9 @@ body {
 .wizard-step.bloqueada .wizard-circle { background: var(--rs-gray-100); }
 
 @keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(0,75,135,.4); }
-    70% { box-shadow: 0 0 0 10px rgba(0,75,135,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,75,135,0); }
+    0% { box-shadow: 0 0 0 0 rgba(var(--rs-blue-rgb),.4); }
+    70% { box-shadow: 0 0 0 10px rgba(var(--rs-blue-rgb),0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--rs-blue-rgb),0); }
 }
 
 /* === Timeline vertical === */
@@ -288,7 +316,7 @@ body {
     background: var(--rs-blue);
     border-color: var(--rs-blue);
     color: #fff;
-    box-shadow: 0 0 0 3px rgba(0,75,135,.2);
+    box-shadow: 0 0 0 3px rgba(var(--rs-blue-rgb),.2);
     animation: pulse-ring 2s infinite;
 }
 
@@ -313,8 +341,8 @@ body {
 
 /* === Badges com cor === */
 .badge-rs-blue { background: var(--rs-blue-light); color: var(--rs-blue); }
-.badge-rs-gold { background: var(--rs-gold-light); color: #8a6d1b; }
-.badge-rs-green { background: var(--rs-green-light); color: var(--rs-green); }
+.badge-rs-gold { background: var(--rs-gold-light); color: var(--rs-gold-dark); }
+.badge-rs-green { background: var(--rs-green-light); color: var(--rs-green-dark); }
 .badge-rs-red { background: var(--rs-red-light); color: var(--rs-red); }
 
 /* === Animacoes === */
@@ -341,30 +369,56 @@ body {
 /* === Link com hover na cor institucional (ex.: "Esqueci minha senha") === */
 .link-hover-primary:hover { color: var(--rs-blue) !important; }
 
-/* === Botoes com gradiente === */
+/* === Botoes com gradiente ===
+   Redefine as variaveis --bs-btn-* para que TODOS os estados (hover, active,
+   disabled, focus) usem a paleta SAUR, e nao o azul padrao do Bootstrap. */
 .btn-primary {
-    background: linear-gradient(135deg, var(--rs-blue), var(--rs-blue-dark));
+    --bs-btn-bg: var(--rs-blue);
+    --bs-btn-border-color: var(--rs-blue);
+    --bs-btn-hover-bg: var(--rs-blue-dark);
+    --bs-btn-hover-border-color: var(--rs-blue-dark);
+    --bs-btn-active-bg: var(--rs-blue-dark);
+    --bs-btn-active-border-color: var(--rs-blue-dark);
+    --bs-btn-disabled-bg: var(--rs-blue);
+    --bs-btn-disabled-border-color: var(--rs-blue);
+    --bs-btn-focus-shadow-rgb: var(--rs-blue-rgb);
+    /* usa background-image (nao o shorthand) para o --bs-btn-*-bg continuar
+       existindo por baixo do gradiente */
+    background-image: linear-gradient(135deg, var(--rs-blue), var(--rs-blue-dark));
     border: none;
-    box-shadow: 0 2px 4px rgba(26,77,143,.25);
+    box-shadow: 0 2px 4px rgba(var(--rs-blue-rgb),.25);
     transition: var(--rs-transition);
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(26,77,143,.35);
+    box-shadow: 0 4px 8px rgba(var(--rs-blue-rgb),.35);
+}
+
+/* No clique/desabilitado remove o gradiente para o --bs-btn-*-bg aparecer
+   (feedback visivel de :active e estado disabled) */
+.btn-primary:active,
+.btn-primary:disabled,
+.btn-primary.disabled {
+    background-image: none;
+    transform: none;
 }
 
 .btn-outline-primary {
-    color: var(--rs-blue);
-    border-color: var(--rs-blue);
+    --bs-btn-color: var(--rs-blue);
+    --bs-btn-border-color: var(--rs-blue);
+    --bs-btn-hover-bg: var(--rs-blue);
+    --bs-btn-hover-border-color: var(--rs-blue);
+    --bs-btn-active-bg: var(--rs-blue-dark);
+    --bs-btn-active-border-color: var(--rs-blue-dark);
+    --bs-btn-disabled-color: var(--rs-blue);
+    --bs-btn-disabled-border-color: var(--rs-blue);
+    --bs-btn-focus-shadow-rgb: var(--rs-blue-rgb);
     transition: var(--rs-transition);
 }
 
-.btn-outline-primary:hover {
-    background: var(--rs-blue);
-    color: #fff;
-    transform: translateY(-1px);
-}
+.btn-outline-primary:hover { transform: translateY(-1px); }
+.btn-outline-primary:active { transform: none; }
 
 /* === Tabelas === */
 .table thead th {
@@ -381,7 +435,9 @@ body {
     transition: var(--rs-transition);
 }
 
-.table tbody tr:hover { background: var(--rs-blue-light) !important; }
+/* Hover so em tabelas que optaram por .table-hover, via variavel do Bootstrap
+   (nao afeta .table-striped nem as variantes .table-* e sem !important) */
+.table-hover { --bs-table-hover-bg: var(--rs-blue-light); }
 
 /* Forms dentro de tabela (aba Respostas): controles nao vazam da celula */
 .table td form { min-width: 0; }
@@ -389,7 +445,7 @@ body {
 .table td form .form-control { width: 100%; }
 
 /* Evita estouro de conteúdo em células da tabela: quebra palavras longas e permite wrap */
-.table td { word-break: break-word; white-space: normal; }
+.table td { overflow-wrap: break-word; white-space: normal; }
 
 /* Botões de anexar respostas: manter texto em uma linha, evitar deslocamento de layout */
 .btn-anexar-resposta { white-space: nowrap; }
@@ -404,7 +460,7 @@ body {
 
 .form-control:focus, .form-select:focus {
     border-color: var(--rs-blue);
-    box-shadow: 0 0 0 3px rgba(0,75,135,.15);
+    box-shadow: 0 0 0 3px rgba(var(--rs-blue-rgb),.25);
 }
 
 /* === Progress bar === */
@@ -419,7 +475,7 @@ body {
     transition: width .6s ease;
 }
 
-.progress-bar.complete { background: linear-gradient(90deg, var(--rs-green), #38a169); }
+.progress-bar.complete { background: linear-gradient(90deg, var(--rs-green), var(--rs-green-bright)); }
 
 /* === Alertas === */
 .alert {
@@ -428,10 +484,10 @@ body {
     box-shadow: var(--rs-shadow-sm);
 }
 
-.alert-success { background: var(--rs-green-light); color: #1a5c30; }
-.alert-danger { background: var(--rs-red-light); color: #8b1a1a; }
-.alert-warning { background: var(--rs-gold-light); color: #7a5e10; }
-.alert-info { background: #e8f0fe; color: #003366; }
+.alert-success { background: var(--rs-green-light); color: var(--rs-green-dark); }
+.alert-danger { background: var(--rs-red-light); color: var(--rs-red-dark); }
+.alert-warning { background: var(--rs-gold-light); color: var(--rs-gold-dark); }
+.alert-info { background: var(--rs-info-light); color: var(--rs-info-dark); }
 
 /* === Paginacao === */
 .page-link {
@@ -516,29 +572,33 @@ body {
     min-width: 0;
     flex: 1 1 320px;
     overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 #pane-envio .list-group-item form {
     flex: 0 0 auto;
 }
 
-/* === Acao column na tabela de pareceres - quebra em vez de cortar/espremer === */
+/* === Acao column na tabela de pareceres - quebra em vez de cortar/espremer ===
+   (tipografia + layout dos controles ficam juntos aqui) */
 .tabela-pareceres .acao-form {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: .375rem;
 }
+.tabela-pareceres .acao-form .form-select-sm,
+.tabela-pareceres .acao-form .form-control-sm {
+    font-size: .78rem;
+    padding: .2rem .4rem;
+    width: auto;
+}
 .tabela-pareceres .acao-form .form-select-sm {
     min-width: 110px;
     flex: 1 1 110px;
-    width: auto;
 }
 .tabela-pareceres .acao-form .form-control-sm {
     min-width: 120px;
     flex: 1 1 120px;
-    width: auto;
 }
 .tabela-pareceres .acao-form .btn-sm {
     flex: 0 0 auto;
@@ -549,6 +609,9 @@ body {
 }
 
 /* === Scrollbar personalizada === */
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: var(--rs-gray-300) var(--rs-gray-100); }
+/* WebKit/Blink */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--rs-gray-100); }
 ::-webkit-scrollbar-thumb { background: var(--rs-gray-300); border-radius: 3px; }
@@ -559,9 +622,41 @@ body {
     .wizard { overflow-x: auto; padding-bottom: 1rem; gap: .5rem; }
     .wizard-step { min-width: 80px; }
     .wizard::before { display: none; }
-    .wizard-step .wizard-label { font-size: .6rem; }
+    .wizard-step .wizard-label { font-size: .65rem; }
+
+    /* Em telas estreitas, deixa as colunas Data/Origem/Resposta quebrarem
+       para reduzir a largura minima da tabela de pareceres */
+    .tabela-pareceres th:nth-child(3),
+    .tabela-pareceres td:nth-child(3),
+    .tabela-pareceres th:nth-child(4),
+    .tabela-pareceres td:nth-child(4),
+    .tabela-pareceres th:nth-child(5),
+    .tabela-pareceres td:nth-child(5) {
+        white-space: normal;
+    }
 
     #pane-envio .list-group-item {
         align-items: flex-start !important;
     }
+}
+
+/* === Acessibilidade: respeita 'reduzir movimento' do sistema ===
+   Desliga a animacao infinita (pulse-ring) e neutraliza as entradas com fade. */
+@media (prefers-reduced-motion: reduce) {
+    .wizard-step.atual .wizard-circle,
+    .timeline-item.atual .timeline-dot {
+        animation: none;
+    }
+    .animate-fade-in,
+    .animate-fade-in-d1,
+    .animate-fade-in-d2,
+    .animate-fade-in-d3,
+    .animate-fade-in-d4,
+    .animate-fade-in-d5,
+    .count-animate,
+    .wizard-content {
+        animation-duration: .01ms;
+        animation-iteration-count: 1;
+    }
+    * { transition-duration: .01ms !important; }
 }

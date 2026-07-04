@@ -164,20 +164,24 @@ public class ProcessoService {
         if (sugestao.isEmpty()) {
             return p;
         }
-        // So decide automaticamente se nao ha pareceres recebidos sem anexo
-        List<Parecer> semAnexo = pareceresRecebidosSemAnexo(p);
-        if (!semAnexo.isEmpty()) {
+        StatusProcesso decisao = sugestao.get();
+        // INDEFERIDO NUNCA e automatico: a regra de negocio exige o MOTIVO do
+        // indeferimento (que vai no oficio oficial ao solicitante) e so o
+        // operador pode informa-lo. Um indeferimento automatico geraria um
+        // oficio com "(motivo nao informado)". Por isso, quando a maioria e
+        // desfavoravel, deixamos apenas a SUGESTAO e o operador confirma na aba
+        // Decisao (onde o motivo e obrigatorio). So o DEFERIDO — que dispensa
+        // motivo — e finalizado automaticamente aqui.
+        if (decisao != StatusProcesso.DEFERIDO) {
             return p;
         }
-        StatusProcesso decisao = sugestao.get();
-        // Decisao automatica nao requer motivo de indeferimento (sera preenchido
-        // manualmente na aba Finalizacao se necessario — mas exigimos o motivo
-        // para gravar a decisao). Para INDEFERIDO automatico, deixamos em branco
-        // e o operador completa depois; porem o servico decidir() nao valida o
-        // motivo — so o controller valida. Aqui chamamos direto no servico.
-        p.setStatus(decisao);
-        p.setDataDecisao(java.time.LocalDateTime.now());
-        return processoRepository.save(p);
+        // So decide automaticamente se nao ha pareceres recebidos sem anexo
+        if (!pareceresRecebidosSemAnexo(p).isEmpty()) {
+            return p;
+        }
+        // Passa pela validacao completa (mesma do caminho manual) — defesa em
+        // profundidade: nao grava um estado que decidir() rejeitaria.
+        return decidir(id, StatusProcesso.DEFERIDO, null);
     }
 
     /**

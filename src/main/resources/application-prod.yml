@@ -36,3 +36,8 @@ app:
     # Em producao o e-mail SEMPRE vai para o destinatario real - o override
     # de teste (application.yml, dev) fica explicitamente desligado aqui.
     override-recipient: ""
+  # PROTECAO DE DADOS: em producao a IA fica DESLIGADA por padrao (default
+  # diferente do application.yml/dev). So liga com SGPUR_GEMINI_ENABLED=true
+  # apos decisao formal de tratamento de dados (ver GeminiService).
+  gemini:
+    enabled: ${SGPUR_GEMINI_ENABLED:false}

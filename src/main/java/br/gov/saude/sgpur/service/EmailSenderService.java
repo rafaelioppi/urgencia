@@ -44,7 +44,7 @@ public class EmailSenderService {
 
     /**
      * Em dev/teste (app.mail.override-recipient configurado), redireciona
-     * TODO envio para um unico endereco fixo, preservando no assunto quem
+     * todo envio para um unico endereco fixo, preservando no assunto quem
      * seriam os destinatarios reais - evita mandar e-mail de teste para
      * avaliadores/solicitantes de verdade. Sem override, retorna os dados
      * originais inalterados (comportamento de producao).

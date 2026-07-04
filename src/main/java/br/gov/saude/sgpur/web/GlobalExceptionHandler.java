@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Tratamento global de excecoes para todas as pages/controllers.
- * Captura异常 nao tratadas e redireciona para paginas de erro amigaveis,
+ * Captura excecoes nao tratadas e redireciona para paginas de erro amigaveis,
  * evitando stacktraces expostas ao usuario.
  *
  * IMPORTANTE: ResponseStatusException (ex.: 403 do AvaliadorController) NAO

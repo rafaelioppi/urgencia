@@ -87,11 +87,26 @@ public class ProcessoDecisaoController {
                         if (par.getOrigem() == OrigemParecer.AVALIADOR_SISTEMA) {
                             return; // ignora silenciosamente qualquer alteracao de resultado
                         }
-                        par.setDataEnvio((env == null || env.isBlank()) ? null : LocalDate.parse(env));
+                        // Parses defensivos: valores adulterados (fora do <select>/
+                        // date picker) geram uma mensagem de negocio clara em vez de
+                        // "Registro nao encontrado" (IllegalArgumentException generica).
+                        if (env == null || env.isBlank()) {
+                            par.setDataEnvio(null);
+                        } else {
+                            try {
+                                par.setDataEnvio(LocalDate.parse(env));
+                            } catch (java.time.format.DateTimeParseException e) {
+                                throw new IllegalStateException("Data de envio invalida: " + env);
+                            }
+                        }
                         if (res == null || res.isBlank()) {
                             par.setResultado(null);
                         } else {
-                            par.setResultado(ResultadoParecer.valueOf(res));
+                            try {
+                                par.setResultado(ResultadoParecer.valueOf(res));
+                            } catch (IllegalArgumentException e) {
+                                throw new IllegalStateException("Parecer invalido: " + res);
+                            }
                             if (par.getDataResposta() == null) {
                                 par.setDataResposta(LocalDate.now());
                             }

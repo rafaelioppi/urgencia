@@ -180,7 +180,14 @@ public class AnexoStorageService {
      * cobre ambos os casos - este metodo existe para clareza e eventual extensao.
      */
     public Path resolverArquivo(Anexo anexo) {
-        return raiz.resolve(anexo.getCaminhoArmazenado()).normalize();
+        Path resolvido = raiz.resolve(anexo.getCaminhoArmazenado()).normalize();
+        // Defesa em profundidade: garante que o caminho resolvido continua
+        // dentro da raiz de anexos, mesmo que caminhoArmazenado seja corrompido
+        // (nunca deveria escapar, pois e gravado pelo proprio sistema).
+        if (!resolvido.startsWith(raiz)) {
+            throw new IllegalArgumentException("Caminho de anexo invalido (fora da area de armazenamento).");
+        }
+        return resolvido;
     }
 
     public Anexo buscar(Long id) {

@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Cobre a protecao "modo teste" (app.mail.override-recipient): quando
- * configurado, TODO envio deve ser redirecionado para o endereco fixo,
+ * configurado, todo envio deve ser redirecionado para o endereco fixo,
  * nunca para o destinatario real - evita mandar e-mail de teste para
  * avaliadores/solicitantes de verdade.
  */

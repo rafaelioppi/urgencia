@@ -1,6 +1,6 @@
-# CLAUDE.md — Guia do projeto SGPUR
+# CLAUDE.md — Guia do projeto SAUR
 
-Sistema de Gestão de Processos de Urgência Renal (SGPUR). Substitui a planilha
+Sistema de Gestão de Processos de Urgência Renal (SAUR). Substitui a planilha
 Excel da equipe de Urgência Renal da Secretaria de Saúde.
 
 ## Stack

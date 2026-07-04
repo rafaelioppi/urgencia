@@ -1,4 +1,4 @@
-# Plano do Fluxo — SGPUR (Urgência Renal)
+# Plano do Fluxo — SAUR (Urgência Renal)
 
 Mapeia o fluxo real do usuário (10 etapas da planilha Excel) para o código, o
 novo ciclo de status e o que ficou pendente.

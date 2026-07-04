@@ -1,4 +1,4 @@
-# Deploy do SGPUR — Oracle Cloud "Always Free" (São Paulo)
+# Deploy do SAUR — Oracle Cloud "Always Free" (São Paulo)
 
 VM gratuita (não dorme), disco persistente e perto do banco Neon (sa-east-1).
 A aplicação roda como serviço `systemd` e o Nginx faz o proxy na porta 80.

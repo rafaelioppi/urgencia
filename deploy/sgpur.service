@@ -1,5 +1,5 @@
 [Unit]
-Description=SGPUR - Sistema de Gestao de Processos de Urgencia Renal
+Description=SAUR - Sistema de Gestao de Processos de Urgencia Renal
 After=network.target
 
 [Service]

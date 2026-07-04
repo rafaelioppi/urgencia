@@ -7,9 +7,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -31,12 +33,30 @@ public class GeminiService {
     private final ObjectMapper mapper;
     private final String model;
     private final String apiKey;
+    private final boolean enabled;
 
     public GeminiService(@Value("${app.gemini.api-key:}") String apiKey,
-                         @Value("${app.gemini.model:gemini-2.0-flash}") String model) {
+                         @Value("${app.gemini.model:gemini-2.0-flash}") String model,
+                         @Value("${app.gemini.enabled:true}") boolean enabled) {
         this.apiKey = apiKey;
         this.model = model;
-        this.restClient = RestClient.create();
+        // Kill-switch de protecao de dados: em producao o padrao e DESLIGADO
+        // (application-prod.yml), pois os recursos de IA enviam conteudo (inclusive
+        // documentos clinicos e e-mails com nome do paciente) a um provedor externo
+        // (Google). So deve ser habilitado (SGPUR_GEMINI_ENABLED=true) apos decisao
+        // formal de tratamento de dados / anonimizacao.
+        this.enabled = enabled;
+        if (!enabled) {
+            log.info("GeminiService: recursos de IA DESLIGADOS (app.gemini.enabled=false). "
+                + "Nenhum dado sera enviado ao provedor externo.");
+        }
+        // Timeouts explicitos: sem eles uma chamada pendurada a Gemini prende a
+        // thread da requisicao indefinidamente. Conexao curta, leitura maior
+        // (geracao de texto pode demorar alguns segundos).
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(10));
+        factory.setReadTimeout(Duration.ofSeconds(30));
+        this.restClient = RestClient.builder().requestFactory(factory).build();
         this.mapper = new ObjectMapper();
     }
 
@@ -47,6 +67,10 @@ public class GeminiService {
      * @return Optional com a resposta textual, ou vazio se erro / chave nao configurada
      */
     public Optional<String> perguntar(String prompt) {
+        if (!enabled) {
+            log.debug("GeminiService: chamada ignorada - IA desligada (app.gemini.enabled=false).");
+            return Optional.empty();
+        }
         if (apiKey == null || apiKey.isBlank()) {
             log.warn("GeminiService: chave da API nao configurada. Defina SGPUR_GEMINI_KEY.");
             return Optional.empty();
@@ -101,6 +125,6 @@ public class GeminiService {
      * Verifica se a chave da API foi configurada e o servico esta disponivel.
      */
     public boolean isDisponivel() {
-        return apiKey != null && !apiKey.isBlank();
+        return enabled && apiKey != null && !apiKey.isBlank();
     }
 }

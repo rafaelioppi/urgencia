@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sobe o SGPUR (Linux / macOS / Git Bash).
+# Sobe o SAUR (Linux / macOS / Git Bash).
 # Uso:  ./start.sh            -> perfil dev (H2)
 #       ./start.sh prod       -> perfil prod (PostgreSQL/Neon via application-local.yml ou env vars)
 set -e
@@ -70,7 +70,7 @@ fi
   fi
 ) &
 
-echo "==> Subindo SGPUR | perfil: $PERFIL | porta: $PORTA | url: $URL | JAVA_HOME: ${JAVA_HOME}"
+echo "==> Subindo SAUR | perfil: $PERFIL | porta: $PORTA | url: $URL | JAVA_HOME: ${JAVA_HOME}"
 exec "$MVN" -DskipTests \
   "-Dspring-boot.run.profiles=$PERFIL" \
   spring-boot:run

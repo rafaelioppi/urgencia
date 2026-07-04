@@ -1,4 +1,4 @@
-# Sobe o SGPUR (Windows / PowerShell).
+# Sobe o SAUR (Windows / PowerShell).
 # Uso:  .\start.ps1            -> perfil dev (H2)
 #       .\start.ps1 prod       -> perfil prod (PostgreSQL/Neon via application-local.yml ou env vars)
 param([string]$Perfil = "dev")
@@ -40,5 +40,5 @@ if ($portas) {
     Start-Sleep -Seconds 1
 }
 
-Write-Host "==> Subindo SGPUR | perfil: $Perfil | JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Cyan
+Write-Host "==> Subindo SAUR | perfil: $Perfil | JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Cyan
 & $mvn -DskipTests "-Dspring-boot.run.profiles=$Perfil" spring-boot:run

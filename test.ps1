@@ -1,4 +1,4 @@
-# Roda TODOS os testes do SGPUR (Windows / PowerShell), forcando o JDK 21.
+# Roda TODOS os testes do SAUR (Windows / PowerShell), forcando o JDK 21.
 # Uso:  .\test.ps1                 -> roda todos os testes
 #       .\test.ps1 ProcessoServiceTest   -> roda so uma classe de teste
 
