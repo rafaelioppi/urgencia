@@ -291,6 +291,26 @@ public class ProcessoDetalheController {
         return "redirect:/processos/" + id;
     }
 
+    /**
+     * Reabre um processo encerrado (Deferido/Indeferido/Cancelado), voltando-o
+     * para ENVIADO. Restrito ao ADMIN (imposto no SecurityConfig por
+     * {@code POST /processos/*}/reabrir). O botao so aparece para ADMIN e quando
+     * o processo esta finalizado.
+     */
+    @PostMapping("/{id}/reabrir")
+    public String reabrir(@PathVariable Long id, RedirectAttributes ra) {
+        Processo p = processoService.buscar(id);
+        String numero = p.getNumero();
+        try {
+            processoService.reabrir(id);
+            auditoria.registrar("PROCESSO_REABERTO", "Processo " + numero + " reaberto (voltou para Enviado)");
+            ra.addFlashAttribute("msg", "Processo " + numero + " reaberto. Status voltou para Enviado.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/processos/" + id;
+    }
+
     // Exclusao e um caminho unico e incondicional: acao auditada pelo aspect.
     // O detalhe grava o id do processo (o numero nao esta disponivel como
     // argumento do metodo).

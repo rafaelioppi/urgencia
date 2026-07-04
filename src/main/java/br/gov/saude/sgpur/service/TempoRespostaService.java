@@ -43,6 +43,34 @@ public class TempoRespostaService {
     /** Estatistica de tempo de resposta de um avaliador (membro). */
     public record TempoMembro(long avaliados, Double mediaDias, long foraDoPrazo) {}
 
+    /**
+     * Detalhe de um parecer respondido: o proprio parecer, o tempo de resposta
+     * em dias corridos (envio -> resposta) e se ficou fora do prazo-meta. Usado
+     * no relatorio individual por avaliador (tempo de cada processo), reusando o
+     * mesmo criterio de calculo dos indicadores agregados.
+     */
+    public record DetalheParecer(Parecer parecer, long dias, boolean foraDoPrazo) {}
+
+    /**
+     * Constroi os {@link DetalheParecer} de uma lista de pareceres respondidos
+     * (resultado/dataEnvio/dataResposta nao nulos), ignorando os com datas
+     * inconsistentes (resposta antes do envio), mesma guarda de {@link #calcularDe}.
+     */
+    public List<DetalheParecer> detalharDe(List<Parecer> respondidos) {
+        List<DetalheParecer> detalhes = new ArrayList<>();
+        for (Parecer p : respondidos) {
+            if (p.getDataEnvio() == null || p.getDataResposta() == null) {
+                continue;
+            }
+            long dias = ChronoUnit.DAYS.between(p.getDataEnvio(), p.getDataResposta());
+            if (dias < 0) {
+                continue;
+            }
+            detalhes.add(new DetalheParecer(p, dias, dias > prazoDias));
+        }
+        return detalhes;
+    }
+
     /** Resumo geral + detalhamento por membro (chave = membroId). */
     public record ResumoTempo(long totalAvaliados, Double mediaGeralDias,
                               long foraDoPrazo, int prazoDias,

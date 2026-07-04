@@ -2,6 +2,7 @@ package br.gov.saude.sgpur.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -86,6 +87,11 @@ public class SecurityConfig {
                     // /auditoria/** ficam exclusivos do ADMIN.
                     .requestMatchers("/membros/**", "/relatorios/**").hasAnyRole("ADMIN", "OPERADOR")
                     .requestMatchers("/controle-urgencias/**").hasAnyRole("ADMIN", "OPERADOR")
+                    // Reabrir processo encerrado e exclusivo do ADMIN. Precisa vir
+                    // ANTES da regra geral /processos/** (ADMIN,OPERADOR), senao o
+                    // OPERADOR herdaria o acesso.
+                    .requestMatchers(HttpMethod.POST, "/processos/*/reabrir").hasRole("ADMIN")
+                    .requestMatchers("/arquivo/**").hasAnyRole("ADMIN", "OPERADOR")
                     .requestMatchers("/", "/processos/**").hasAnyRole("ADMIN", "OPERADOR")
                     .requestMatchers("/avaliador/**").hasRole("AVALIADOR")
                     .anyRequest().authenticated();

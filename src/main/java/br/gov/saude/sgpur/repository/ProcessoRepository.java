@@ -29,6 +29,12 @@ public interface ProcessoRepository extends JpaRepository<Processo, Long> {
 
     List<Processo> findByStatusOrderByAnoDescSequencialDesc(StatusProcesso status);
 
+    /**
+     * Processos encerrados (arquivo): recebe a colecao de status finais
+     * (DEFERIDO/INDEFERIDO/CANCELADO), mais recentes primeiro.
+     */
+    List<Processo> findByStatusInOrderByAnoDescSequencialDesc(java.util.Collection<StatusProcesso> status);
+
     /** Anos distintos que possuem ao menos um processo, mais recente primeiro. */
     @Query("select distinct p.ano from Processo p order by p.ano desc")
     List<Integer> findAnosComProcessos();

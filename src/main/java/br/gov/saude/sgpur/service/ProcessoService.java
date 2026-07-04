@@ -296,6 +296,26 @@ public class ProcessoService {
         return processoRepository.save(p);
     }
 
+    /**
+     * Reabre um processo ENCERRADO (Deferido/Indeferido/Cancelado), voltando-o
+     * para {@link StatusProcesso#ENVIADO} para que o operador possa reavaliar e
+     * decidir de novo. Limpa a decisao anterior (dataDecisao e motivo de
+     * indeferimento); os pareceres sao mantidos como estao. Acao restrita ao
+     * ADMIN (imposta no {@code SecurityConfig}). Lanca erro se o processo nao
+     * estiver finalizado (nao ha o que reabrir).
+     */
+    @Transactional
+    public Processo reabrir(Long id) {
+        Processo p = buscar(id);
+        if (!p.getStatus().isFinalizado()) {
+            throw new IllegalStateException("So e possivel reabrir processos encerrados.");
+        }
+        p.setStatus(StatusProcesso.ENVIADO);
+        p.setDataDecisao(null);
+        p.setMotivoIndeferimento(null);
+        return processoRepository.save(p);
+    }
+
     private int extrairSequencial(String numero, int ano) {
         if (numero == null || numero.isBlank()) {
             return 0;

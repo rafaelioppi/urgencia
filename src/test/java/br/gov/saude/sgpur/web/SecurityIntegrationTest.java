@@ -8,7 +8,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -107,5 +109,26 @@ class SecurityIntegrationTest {
             .andExpect(status().isForbidden());
         mvc.perform(get("/auditoria"))
             .andExpect(status().isForbidden());
+    }
+
+    // --- Arquivo / Reabertura ---
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    void operadorAcessaArquivoMasNaoReabreProcesso() throws Exception {
+        mvc.perform(get("/arquivo")).andExpect(status().isOk());
+        // Reabrir e exclusivo do ADMIN: bloqueado por role antes de chegar no controller.
+        mvc.perform(post("/processos/1/reabrir").with(csrf()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void adminAcessaArquivoEPodeChamarReabrir() throws Exception {
+        mvc.perform(get("/arquivo")).andExpect(status().isOk());
+        // Sem processo id=1 cadastrado no banco de teste (create-drop): a
+        // seguranca libera (nao e 403) e a regra de negocio redireciona com erro.
+        mvc.perform(post("/processos/1/reabrir").with(csrf()))
+            .andExpect(status().is3xxRedirection());
     }
 }

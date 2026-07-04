@@ -428,4 +428,33 @@ class ProcessoServiceTest {
         service.decidir(99L, StatusProcesso.DEFERIDO, null);
         assertThat(p.getStatus()).isEqualTo(StatusProcesso.DEFERIDO);
     }
+
+    @Test
+    void reabrirVoltaParaEnviadoELimpaDecisao() {
+        Processo p = comPareceres(ResultadoParecer.FAVORAVEL,
+            ResultadoParecer.FAVORAVEL, ResultadoParecer.NAO_FAVORAVEL);
+        anexarRespostasParaTodosRecebidos(p);
+        when(processoRepository.findById(30L)).thenReturn(java.util.Optional.of(p));
+        when(processoRepository.save(p)).thenReturn(p);
+        service.decidir(30L, StatusProcesso.DEFERIDO, null);
+        assertThat(p.getStatus()).isEqualTo(StatusProcesso.DEFERIDO);
+
+        service.reabrir(30L);
+
+        assertThat(p.getStatus()).isEqualTo(StatusProcesso.ENVIADO);
+        assertThat(p.getDataDecisao()).isNull();
+        assertThat(p.getMotivoIndeferimento()).isNull();
+    }
+
+    @Test
+    void reabrirLancaErroSeProcessoNaoEstiverFinalizado() {
+        Processo p = comPareceres(ResultadoParecer.FAVORAVEL, null, null);
+        p.setStatus(StatusProcesso.ENVIADO);
+        when(processoRepository.findById(31L)).thenReturn(java.util.Optional.of(p));
+
+        assertThatThrownBy(() -> service.reabrir(31L))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("encerrados");
+        assertThat(p.getStatus()).isEqualTo(StatusProcesso.ENVIADO);
+    }
 }
