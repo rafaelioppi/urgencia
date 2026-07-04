@@ -98,23 +98,30 @@
 <!-- ============================================================
      Padrao de status do sistema (design-system). Use SEMPRE estes
      fragments para indicar estado, para o padrao ficar consistente
-     em todas as telas. Icone + cor + texto (visually-hidden) por
-     acessibilidade (nunca cor sozinha).
-       - status(ok):    ok=true  -> visto verde (bi-check-lg)
-                        ok=false -> X vermelho SOLTO (bi-x-lg)  [pendente obrigatorio]
-       - statusNa(txt): traco cinza (bi-dash-lg) [opcional vazio / dispensado /
-                        inativo / nao-aplicavel — estados intencionais, NAO pendencia]
+     em todas as telas. Icone + cor + TEXTO VISIVEL (nunca cor sozinha,
+     nunca so o icone) por acessibilidade e clareza.
+       - status(ok):        ok=true  -> visto verde "Concluido"
+                            ok=false -> X vermelho SOLTO "Pendente" [obrigatorio]
+       - statusRotulo(ok,r): igual ao status(ok), mas com rotulo customizado
+                            (ex.: "Ativo"/"Sim"/"Nao") no lugar de Concluido/Pendente
+       - statusNa(txt):     traco cinza (bi-dash-lg) + rotulo [opcional vazio /
+                            dispensado / inativo / nao-aplicavel — estados
+                            intencionais, NAO pendencia]
      Uso: <span th:replace="~{layout :: status(${cond})}"></span>
      ============================================================ -->
-<span th:fragment="status(ok)" class="status-mark"
-      th:title="${ok} ? 'Concluido' : 'Pendente'">
-    <i class="bi" th:classappend="${ok} ? 'bi-check-lg text-success' : 'bi-x-lg text-danger'"
-       aria-hidden="true"></i>
-    <span class="visually-hidden" th:text="${ok} ? 'Concluido' : 'Pendente'">status</span>
+<span th:fragment="status(ok)" class="status-mark fw-semibold"
+      th:classappend="${ok} ? 'text-success' : 'text-danger'">
+    <i class="bi" th:classappend="${ok} ? 'bi-check-lg' : 'bi-x-lg'" aria-hidden="true"></i>
+    <span th:text="${ok} ? 'Concluido' : 'Pendente'">status</span>
 </span>
-<span th:fragment="statusNa(rotulo)" class="status-mark" th:title="${rotulo}">
-    <i class="bi bi-dash-lg text-secondary" aria-hidden="true"></i>
-    <span class="visually-hidden" th:text="${rotulo}">status</span>
+<span th:fragment="statusRotulo(ok, rotulo)" class="status-mark fw-semibold"
+      th:classappend="${ok} ? 'text-success' : 'text-danger'">
+    <i class="bi" th:classappend="${ok} ? 'bi-check-lg' : 'bi-x-lg'" aria-hidden="true"></i>
+    <span th:text="${rotulo}">status</span>
+</span>
+<span th:fragment="statusNa(rotulo)" class="status-mark fw-semibold text-secondary">
+    <i class="bi bi-dash-lg" aria-hidden="true"></i>
+    <span th:text="${rotulo}">status</span>
 </span>
 
 <div th:fragment="footer" class="footer-sgpur mt-auto">

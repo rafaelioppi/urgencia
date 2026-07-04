@@ -398,15 +398,15 @@
                     </div>
 
                     <!-- ========== PASSO 2: Comprovante de envio ========== -->
-                    <div th:unless="${envioFeito}" class="border-start border-3 border-secondary ps-3 mb-4">
-                        <h6 class="fw-bold text-secondary mb-2">
-                            <span th:if="${comprovanteEnvioAvaliadores != null}"><span th:replace="~{layout :: status(true)}"></span></span>
-                            <span th:unless="${comprovanteEnvioAvaliadores != null}"><span th:replace="~{layout :: statusNa('Opcional - nao enviado')}"></span></span>
-                            <span class="badge bg-secondary me-2 rounded-pill">2</span>
-                            Anexar comprovante de envio (opcional)
+                    <div th:unless="${envioFeito}" class="border-start border-3 border-primary ps-3 mb-4">
+                        <h6 class="fw-bold text-primary mb-2">
+                            <span th:replace="~{layout :: status(${comprovanteEnvioAvaliadores != null})}"></span>
+                            <span class="badge bg-primary me-2 rounded-pill">2</span>
+                            Anexar comprovante de envio
                         </h6>
                         <p class="small text-muted mb-2">
                             Anexe o PDF ou e-mail de envio enviado aos 3 avaliadores como comprovante.
+                            <strong>Obrigatorio</strong> para registrar o envio.
                         </p>
                         <div th:if="${comprovanteEnvioAvaliadores != null}" class="alert alert-success py-2 mb-2">
                             <span th:replace="~{layout :: status(true)}"></span>
@@ -418,14 +418,18 @@
                               enctype="multipart/form-data" class="row g-2 align-items-end">
                             <div class="col-md-8">
                                 <label class="form-label small">Arquivo do e-mail de envio (PDF, EML, MSG)</label>
-                                <input type="file" name="arquivo" class="form-control form-control-sm" accept=".pdf,.eml,.msg">
+                                <input type="file" name="arquivo" class="form-control form-control-sm" accept=".pdf,.eml,.msg" required>
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
-                                <button class="btn btn-outline-secondary btn-sm">
+                                <button class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-upload"></i> Anexar comprovante
                                 </button>
                             </div>
                         </form>
+                        <div th:if="${comprovanteEnvioAvaliadores == null}" class="alert alert-info py-2 mb-0 mt-2">
+                            <i class="bi bi-info-circle"></i>
+                            Anexe o comprovante de envio (PDF, EML ou MSG) para registrar o envio.
+                        </div>
                     </div>
 
                     <!-- ========== PASSO 3: Registrar envio ========== -->
@@ -579,18 +583,18 @@
                             </td>
                             <td>
                                 <span th:if="${pareceresComResposta.contains(par.id)}" class="text-nowrap">
-                                    <span th:replace="~{layout :: status(true)}"></span> Sim
+                                    <span th:replace="~{layout :: statusRotulo(true, 'Sim')}"></span>
                                 </span>
                                 <th:block th:unless="${pareceresComResposta.contains(par.id)}">
                                     <!-- Dispensado (voto no portal dispensa anexo, ou processo finalizado): estado
                                          intencional, NAO pendencia -> traco cinza, nunca X vermelho. -->
                                     <span th:if="${(par.origem != null and par.origem.name() == 'AVALIADOR_SISTEMA') or processo.status.finalizado}"
-                                          class="text-nowrap text-muted">
-                                        <span th:replace="~{layout :: statusNa('Dispensado')}"></span> Dispensado
+                                          class="text-nowrap">
+                                        <span th:replace="~{layout :: statusNa('Dispensado')}"></span>
                                     </span>
                                     <span th:unless="${(par.origem != null and par.origem.name() == 'AVALIADOR_SISTEMA') or processo.status.finalizado}"
                                           class="text-nowrap">
-                                        <span th:replace="~{layout :: status(false)}"></span> Nao
+                                        <span th:replace="~{layout :: statusRotulo(false, 'Nao')}"></span>
                                     </span>
                                 </th:block>
                             </td>

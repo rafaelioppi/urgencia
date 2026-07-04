@@ -25,10 +25,10 @@
                 <td><span class="badge bg-secondary" th:text="${u.perfil.descricao}">Perfil</span></td>
                 <td>
                     <span th:if="${u.ativo}" class="text-nowrap">
-                        <span th:replace="~{layout :: status(true)}"></span> Ativo
+                        <span th:replace="~{layout :: statusRotulo(true, 'Ativo')}"></span>
                     </span>
-                    <span th:unless="${u.ativo}" class="text-nowrap text-muted">
-                        <span th:replace="~{layout :: statusNa('Inativo')}"></span> Inativo
+                    <span th:unless="${u.ativo}" class="text-nowrap">
+                        <span th:replace="~{layout :: statusNa('Inativo')}"></span>
                     </span>
                 </td>
                 <td class="text-end">

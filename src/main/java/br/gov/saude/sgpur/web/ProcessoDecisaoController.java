@@ -216,6 +216,14 @@ public class ProcessoDecisaoController {
         Processo p = processoService.buscar(id);
         LocalDate hoje = LocalDate.now();
 
+        boolean temComprovanteEnvio = p.getAnexos().stream()
+            .anyMatch(a -> a.getTipo() == TipoAnexo.EMAIL_ENVIADO_AVALIADORES);
+        if (!temComprovanteEnvio) {
+            ra.addFlashAttribute("erro",
+                "Anexe o comprovante de envio (PDF, EML ou MSG) aos avaliadores antes de registrar o envio.");
+            return "redirect:/processos/" + id + "#envio";
+        }
+
         // O PDF dos avaliadores agora e montado SO com os documentos clinicos
         // anonimizados (PDF) anexados pelo operador: funde-os em um unico PDF e
         // carimba, em cada pagina, um cabecalho com nº do processo + INICIAIS do

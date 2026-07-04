@@ -115,7 +115,12 @@ não renomeados no rebrand SAUR). `artifactId` do Maven é `saur` (gera
   **bloqueia** (flash `erro`, sem efetivar o envio) se não houver nenhum. A
   **solicitação original** (`SOLICITACAO_RECEBIDA`) **NUNCA** entra nesse PDF
   (contém o nome completo). Documentos clínicos não-PDF são ignorados do merge com
-  **aviso não-bloqueante** (flash `aviso`). O método legado
+  **aviso não-bloqueante** (flash `aviso`). **O comprovante de envio aos
+  avaliadores (`EMAIL_ENVIADO_AVALIADORES`) também é obrigatório** (deixou de
+  ser opcional): `registrarEnvio` **bloqueia** (flash `erro`) se não houver
+  o PDF/EML/MSG do e-mail enviado aos 3 avaliadores anexado — os 3 sub-passos
+  da aba Envio (documentos clínicos, comprovante de envio, registrar envio)
+  são todos obrigatórios. O método legado
   `SolicitacaoAvaliadorService.gerar` (folha-rosto) **permanece no código mas não
   é mais chamado** no fluxo de envio. Os documentos clínicos são anexados na
   própria aba Envio (`POST /processos/{id}/documento-clinico`). **Aviso (não
