@@ -78,8 +78,16 @@ public class ProcessoDecisaoController {
         if (parecerId != null) {
             for (int i = 0; i < parecerId.size(); i++) {
                 Long pid = parecerId.get(i);
-                String res = (resultado != null && i < resultado.size()) ? resultado.get(i) : "";
-                String env = (dataEnvio != null && i < dataEnvio.size()) ? dataEnvio.get(i) : "";
+                // Distingue "indice ausente" (array mais curto que parecerId - cliente
+                // parcial/adulterado) de "indice presente mas em branco" (limpeza
+                // explicita, mesmo comportamento de sempre do form original que sempre
+                // envia todos os pareceres). So o segundo caso deve zerar o campo -
+                // o primeiro deve DEIXAR O VALOR ATUAL INTOCADO, para nao apagar
+                // resultado/dataEnvio ja gravados so porque o array veio incompleto.
+                boolean resPresente = resultado != null && i < resultado.size();
+                boolean envPresente = dataEnvio != null && i < dataEnvio.size();
+                String res = resPresente ? resultado.get(i) : null;
+                String env = envPresente ? dataEnvio.get(i) : null;
                 p.getPareceres().stream()
                     .filter(par -> par.getId().equals(pid))
                     .findFirst()
@@ -93,25 +101,29 @@ public class ProcessoDecisaoController {
                         // Parses defensivos: valores adulterados (fora do <select>/
                         // date picker) geram uma mensagem de negocio clara em vez de
                         // "Registro nao encontrado" (IllegalArgumentException generica).
-                        if (env == null || env.isBlank()) {
-                            par.setDataEnvio(null);
-                        } else {
-                            try {
-                                par.setDataEnvio(LocalDate.parse(env));
-                            } catch (java.time.format.DateTimeParseException e) {
-                                throw new IllegalStateException("Data de envio invalida: " + env);
+                        if (envPresente) {
+                            if (env == null || env.isBlank()) {
+                                par.setDataEnvio(null);
+                            } else {
+                                try {
+                                    par.setDataEnvio(LocalDate.parse(env));
+                                } catch (java.time.format.DateTimeParseException e) {
+                                    throw new IllegalStateException("Data de envio invalida: " + env);
+                                }
                             }
                         }
-                        if (res == null || res.isBlank()) {
-                            par.setResultado(null);
-                        } else {
-                            try {
-                                par.setResultado(ResultadoParecer.valueOf(res));
-                            } catch (IllegalArgumentException e) {
-                                throw new IllegalStateException("Parecer invalido: " + res);
-                            }
-                            if (par.getDataResposta() == null) {
-                                par.setDataResposta(LocalDate.now());
+                        if (resPresente) {
+                            if (res == null || res.isBlank()) {
+                                par.setResultado(null);
+                            } else {
+                                try {
+                                    par.setResultado(ResultadoParecer.valueOf(res));
+                                } catch (IllegalArgumentException e) {
+                                    throw new IllegalStateException("Parecer invalido: " + res);
+                                }
+                                if (par.getDataResposta() == null) {
+                                    par.setDataResposta(LocalDate.now());
+                                }
                             }
                         }
                     });
@@ -478,7 +490,7 @@ public class ProcessoDecisaoController {
     @PostMapping("/{id}/resposta-avaliador")
     public String respostaAvaliador(@PathVariable Long id,
                                     @RequestParam Long parecerId,
-                                    @RequestParam("arquivo") MultipartFile arquivo,
+                                    @RequestParam(value = "arquivo", required = false) MultipartFile arquivo,
                                     @RequestParam(required = false) String descricao,
                                     @RequestParam(required = false) String resultado,
                                     RedirectAttributes ra) {
@@ -493,20 +505,54 @@ public class ProcessoDecisaoController {
                 "Nao e possivel anexar resposta de um avaliador que votou pelo portal (nao-repudio).");
             return "redirect:/processos/" + id + "#respostas";
         }
+        // Parecer ainda sem resultado: o resultado e obrigatorio JUNTO com o anexo.
+        // Sem essa checagem, um anexo sem resultado selecionado salvava o arquivo e
+        // deixava o parecer preso sem resultado - a tela some com os dois botoes
+        // (upload exige !pareceresComResposta) e nao ha mais como registrar o parecer.
+        // Faz o parse ANTES de salvar o anexo: um valor invalido nao pode deixar o
+        // anexo salvo com o parecer ainda sem resultado.
+        boolean resultadoInformado = resultado != null && !resultado.isBlank();
+        if (parecer.getResultado() == null && !resultadoInformado) {
+            ra.addFlashAttribute("erro",
+                "Selecione o parecer (Favoravel/Nao favoravel/Solicita informacao) antes de anexar a resposta.");
+            return "redirect:/processos/" + id + "#respostas";
+        }
+        ResultadoParecer resultadoParseado = null;
+        if (resultadoInformado) {
+            try {
+                resultadoParseado = ResultadoParecer.valueOf(resultado);
+            } catch (IllegalArgumentException e) {
+                ra.addFlashAttribute("erro", "Parecer invalido: " + resultado);
+                return "redirect:/processos/" + id + "#respostas";
+            }
+        }
+        // Arquivo e opcional apenas quando o parecer JA tem um anexo de resposta
+        // (caso de recuperacao: operador so precisa completar o resultado que
+        // ficou pendente). Sem anexo previo, o arquivo continua obrigatorio.
+        boolean jaTemAnexoResposta = p.getAnexos().stream()
+            .anyMatch(a -> a.getTipo() == TipoAnexo.RESPOSTA_AVALIADOR
+                && a.getParecer() != null && a.getParecer().getId().equals(parecerId));
+        boolean arquivoEnviado = arquivo != null && !arquivo.isEmpty();
+        if (!arquivoEnviado && !jaTemAnexoResposta) {
+            ra.addFlashAttribute("erro", "Selecione o arquivo da resposta do avaliador.");
+            return "redirect:/processos/" + id + "#respostas";
+        }
         try {
-            String desc = (descricao != null && !descricao.isBlank())
-                ? descricao
-                : "Resposta de " + parecer.getMembro().getNome();
-            anexoStorage.salvarRespostaAvaliador(p, parecer, desc, arquivo);
-            auditoria.registrar("ANEXO_ADICIONADO",
-                "Processo " + p.getNumero() + " - Resposta de " + parecer.getMembro().getNome());
+            if (arquivoEnviado) {
+                String desc = (descricao != null && !descricao.isBlank())
+                    ? descricao
+                    : "Resposta de " + parecer.getMembro().getNome();
+                anexoStorage.salvarRespostaAvaliador(p, parecer, desc, arquivo);
+                auditoria.registrar("ANEXO_ADICIONADO",
+                    "Processo " + p.getNumero() + " - Resposta de " + parecer.getMembro().getNome());
+            }
         } catch (IllegalArgumentException | IOException e) {
             ra.addFlashAttribute("erro", "Falha ao anexar resposta: " + e.getMessage());
             return "redirect:/processos/" + id + "#respostas";
         }
         // Se resultado foi informado, atualiza o parecer de uma vez
-        if (resultado != null && !resultado.isBlank()) {
-            parecer.setResultado(ResultadoParecer.valueOf(resultado));
+        if (resultadoInformado) {
+            parecer.setResultado(resultadoParseado);
             if (parecer.getDataResposta() == null) {
                 parecer.setDataResposta(LocalDate.now());
             }

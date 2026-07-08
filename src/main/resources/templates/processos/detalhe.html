@@ -666,6 +666,13 @@
                                             <i class="bi bi-upload"></i> Anexar
                                         </button>
                                     </th:block>
+                                    <!-- Recuperacao: anexo ja existe mas o resultado ficou pendente
+                                         (registro anterior a essa validacao). So falta o resultado,
+                                         sem exigir reenviar arquivo. -->
+                                    <button th:if="${par.resultado == null and pareceresComResposta.contains(par.id)}"
+                                            class="btn btn-outline-primary btn-sm text-nowrap btn-anexar-resposta">
+                                        <i class="bi bi-check2"></i> Registrar parecer
+                                    </button>
                                 </form>
                                 <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap mt-1 btn-lembrete-avaliador"
                                         th:if="${par.resultado == null and !processo.status.finalizado and !pareceresPortal.contains(par.id) and par.membro.email != null and !par.membro.email.isBlank()}"
