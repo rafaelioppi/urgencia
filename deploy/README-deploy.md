@@ -124,3 +124,51 @@ ssh ubuntu@<IP> 'sudo mv /tmp/sgpur.jar /opt/sgpur/sgpur.jar && sudo chown sgpur
 - O banco é o **Neon** (externo); a VM só roda o app. Não há perda de dados do
   banco ao recriar a VM.
 - O `sgpur.env` contém segredos: está no `.gitignore` e tem permissão `600`.
+
+## Se a rede bloquear SSH (proxy corporativo)
+
+Se `ssh ubuntu@<IP>` falhar de uma rede corporativa (proxy bloqueando a
+porta 22), use o **Oracle Cloud Shell** (terminal no navegador, no console
+da OCI, ícone `>_` no topo) — ele roda na rede da própria Oracle, sem passar
+pelo proxy. A chave privada (arquivo `ssh-key-AAAA-MM-DD.key`, baixado na
+criação da VM) precisa estar no Cloud Shell:
+```bash
+find ~ -maxdepth 2 -iname "*.key" 2>/dev/null   # confere se a chave ja esta la
+chmod 600 ~/ssh-key-AAAA-MM-DD.key
+ssh -i ~/ssh-key-AAAA-MM-DD.key ubuntu@<IP>
+```
+Pra enviar um JAR novo por esse caminho: baixa o jar da sua máquina/IDE,
+sobe pro Cloud Shell (botão de upload), depois `scp -i ~/ssh-key-...key
+saur-0.0.1-SNAPSHOT.jar ubuntu@<IP>:/tmp/` e segue o passo "Atualizar a
+aplicação" acima já dentro da sessão SSH.
+
+## Troubleshooting: SMTP "Authentication failed" / "535 Bad Credentials"
+
+Se o envio de e-mail falhar mesmo com host/porta/usuário certos:
+
+1. **Confirme a senha realmente em uso pelo processo** (não confie só no
+   arquivo — ele pode ter sido editado depois do último restart):
+   ```bash
+   sudo systemctl status sgpur | grep "Main PID"
+   sudo cat /proc/<PID>/environ | tr '\0' '\n' | grep MAIL_PASS
+   ```
+2. Se precisar ver o diálogo SMTP exato (o que o Java realmente manda pro
+   Gmail), ative debug temporariamente no `sgpur.env`:
+   ```
+   SPRING_MAIL_PROPERTIES_MAIL_DEBUG=true
+   SPRING_MAIL_PROPERTIES_MAIL_DEBUG_AUTH=true
+   ```
+   Reinicia o serviço, tenta enviar um e-mail, e procura a linha `AUTH
+   PLAIN <base64>` no `journalctl -u sgpur`. Decodifica com
+   `echo '<base64>' | base64 -d` — o formato é
+   `\0<usuario>\0<senha>`. Se a senha decodificada for diferente da senha
+   de app que você gerou no Google, o arquivo `sgpur.env` está com um valor
+   errado (já aconteceu: uma segunda senha de app foi digitada por engano
+   no lugar da testada). **Remova as duas variáveis de debug depois de
+   resolver** — não deixar debug ligado em produção.
+3. Teste a credencial isolada, sem depender do Java, com
+   `deploy/testar-smtp.py` (usa `getpass`, a senha nunca aparece na tela).
+4. Já eliminados como causa em incidentes anteriores (não reabrir): espaço
+   na senha de app, mecanismo `AUTH LOGIN` vs `PLAIN`, bloqueio de porta 587
+   pela Oracle (só a porta 25 é bloqueada por padrão), variável
+   `SPRING_MAIL_*` sobrescrevendo via env.

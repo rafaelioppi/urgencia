@@ -268,3 +268,14 @@ autenticado do próprio médico no sistema.
 Artefatos em `deploy/` (systemd, nginx, env de exemplo, guia). Host alvo:
 **Oracle Always Free (São Paulo)** — ver `deploy/README-deploy.md`.
 A **Vercel não hospeda o app Java** (só serve de banco).
+
+**Status em produção (2026-07-09)**: SAUR está no ar em
+https://urgenciarenal.duckdns.org/, JAR atualizado com o fix do parecer
+(commit `3b960c1`), banco Neon e envio de e-mail (SMTP Gmail) funcionando.
+`deploy/README-deploy.md` ganhou 2 seções novas: acesso via Oracle Cloud
+Shell quando SSH direto é bloqueado por proxy corporativo, e troubleshooting
+de "Authentication failed" no SMTP (causa raiz encontrada: o `sgpur.env` da
+VM tinha uma senha de app diferente da testada/válida — sempre confirmar a
+senha real em uso via `/proc/<PID>/environ`, não só o arquivo, antes de
+trocar de teoria). Utilitário `deploy/testar-smtp.py` testa a credencial
+SMTP isolada (sem depender do Java) com `getpass`.
