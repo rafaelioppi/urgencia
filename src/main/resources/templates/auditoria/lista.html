@@ -29,7 +29,7 @@
                             th:text="${#temporals.format(log.dataHora, 'HH:mm:ss')}">hora</td>
                         <td th:text="${log.usuario}">usuario</td>
                         <td><span class="badge bg-secondary" th:text="${log.acao}">ACAO</span></td>
-                        <td class="small" th:text="${log.detalhe}">detalhe</td>
+                        <td class="small text-truncate" style="max-width:240px;" th:text="${log.detalhe}" th:title="${log.detalhe}">detalhe</td>
                         <td class="small font-monospace text-muted"
                             th:text="${log.ip != null} ? ${log.ip} : '-'">-</td>
                     </tr>

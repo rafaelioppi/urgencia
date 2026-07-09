@@ -58,11 +58,11 @@
                     <thead class="table-light">
                     <tr>
                         <th>Nome</th>
-                        <th>RGCT</th>
+                        <th class="d-none d-md-table-cell">RGCT</th>
                         <th>Equipe</th>
-                        <th>ABO</th>
+                        <th class="d-none d-md-table-cell">ABO</th>
                         <th>Vencimento</th>
-                        <th>Ultima renovacao</th>
+                        <th class="d-none d-md-table-cell">Ultima renovacao</th>
                         <th>Situacao</th>
                         <th></th>
                     </tr>
@@ -70,15 +70,15 @@
                     <tbody>
                     <tr th:each="r : ${registros}">
                         <td th:text="${r.nomePaciente}">Paciente</td>
-                        <td class="small text-muted" th:text="${r.rgct} ?: '-'">RGCT</td>
+                        <td class="small text-muted d-none d-md-table-cell" th:text="${r.rgct} ?: '-'">RGCT</td>
                         <td class="small" th:text="${r.equipe} ?: '-'">Equipe</td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             <span th:if="${r.abo}" class="badge bg-light text-dark border"
                                   th:text="${r.abo}">AB</span>
                             <span th:unless="${r.abo}">-</span>
                         </td>
                         <td th:text="${#temporals.format(r.dataVencimento, 'dd/MM/yyyy')}">01/01/2026</td>
-                        <td class="small text-muted" th:text="${r.dataUltimaRenovacao != null} ? ${#temporals.format(r.dataUltimaRenovacao, 'dd/MM/yyyy')} : '-'">-</td>
+                        <td class="small text-muted d-none d-md-table-cell" th:text="${r.dataUltimaRenovacao != null} ? ${#temporals.format(r.dataUltimaRenovacao, 'dd/MM/yyyy')} : '-'">-</td>
                         <td>
                             <span class="badge"
                                   th:classappend="${r.situacao.name() == 'ATIVA'} ? 'bg-primary' : (${r.situacao.name() == 'RENOVADA'} ? 'bg-success' : (${r.situacao.name() == 'EXPIRADA'} ? 'bg-warning text-dark' : 'bg-secondary'))"

@@ -662,6 +662,11 @@ tr.linha-inativa > td:first-child {
 .stat-card-membros   { --stat-bg: #e3edf7; --stat-border: var(--rs-blue); --stat-text: var(--rs-blue); --stat-icon-bg: #e3edf7; --stat-icon-color: var(--rs-blue); }
 .stat-card-tempo     { --stat-bg: #fff; --stat-border: var(--rs-gray-200); --stat-text: var(--rs-gray-800); --stat-icon-bg: var(--rs-gray-100); --stat-icon-color: var(--rs-gray-500); }
 
+/* Tabela do dashboard: scroll vertical so em desktop (evita cortar conteudo em mobile) */
+@media (min-width: 768px) {
+    .dashboard-tabela-scroll { max-height: 70vh; overflow-y: auto; }
+}
+
 /* === Toast de notificacao (feedback nao-intrusivo) === */
 .toast-container-sgpur {
     position: fixed;
@@ -703,14 +708,16 @@ tr.linha-inativa > td:first-child {
     to   { opacity: 1; transform: translateX(0); }
 }
 
-/* === Scrollbar personalizada === */
-/* Firefox */
-* { scrollbar-width: thin; scrollbar-color: var(--rs-gray-300) var(--rs-gray-100); }
-/* WebKit/Blink */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--rs-gray-100); }
-::-webkit-scrollbar-thumb { background: var(--rs-gray-300); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--rs-gray-400); }
+/* === Scrollbar personalizada (apenas desktop) === */
+@media (min-width: 768px) {
+    /* Firefox */
+    * { scrollbar-width: thin; scrollbar-color: var(--rs-gray-300) var(--rs-gray-100); }
+    /* WebKit/Blink */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--rs-gray-100); }
+    ::-webkit-scrollbar-thumb { background: var(--rs-gray-300); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--rs-gray-400); }
+}
 
 /* === Responsivo: wizard vira scroll horizontal em mobile === */
 @media (max-width: 768px) {
@@ -731,7 +738,7 @@ tr.linha-inativa > td:first-child {
         padding: 0 .25rem;
     }
     .wizard::before { display: none; }
-    .wizard-step .wizard-circle { width: 36px; height: 36px; font-size: .75rem; }
+    .wizard-step .wizard-circle { width: 40px; height: 40px; font-size: .75rem; }
     .wizard-step .wizard-label { font-size: .6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; }
     /* Sombra sutil indicando que ha mais passos para scroll */
     .wizard-wrapper { position: relative; }
@@ -760,9 +767,35 @@ tr.linha-inativa > td:first-child {
         white-space: normal;
     }
 
+    /* G1: reduz a largura minima da coluna Acao em mobile para evitar
+       scroll horizontal excessivo */
+    .tabela-pareceres th:nth-child(6),
+    .tabela-pareceres td:nth-child(6) {
+        min-width: 220px;
+        width: auto;
+    }
+
     #pane-envio .list-group-item {
         align-items: flex-start !important;
     }
+}
+
+/* === Responsivo: celulares pequenos (< 576px) === */
+@media (max-width: 576px) {
+    /* Reduz tamanho dos stat-cards no dashboard */
+    .stat-card .stat-number { font-size: 1.25rem; }
+    .stat-card .stat-icon { width: 36px; height: 36px; font-size: 1rem; }
+    .stat-card { padding: .75rem; }
+
+    /* Toast ocupa largura total com margem */
+    .toast-container-sgpur { left: .5rem; right: .5rem; }
+    .toast-sgpur { max-width: 100%; min-width: 0; }
+
+    /* Reduz padding de cards */
+    .card-body { padding: .75rem; }
+
+    /* Cards de resumo no controle-urgencias: texto dos badges menor */
+    .badge.fs-5 { font-size: 1rem !important; }
 }
 
 /* === Acessibilidade: respeita 'reduzir movimento' do sistema ===
