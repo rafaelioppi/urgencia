@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{layout :: head('Entrar')}"></head>
-<body style="background: linear-gradient(135deg, #1a4d8f 0%, #0f3163 50%, #061a33 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
-<div class="container" style="max-width: 420px; padding: 2rem;">
+<body style="background:linear-gradient(135deg, var(--rs-blue) 0%, var(--rs-blue-dark) 50%, #061a33 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;">
+<div class="container" style="max-width:420px;padding:2rem;">
     <div class="text-center mb-4 animate-fade-in">
         <div class="d-inline-flex align-items-center justify-content-center"
              style="width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);">
-            <i class="bi bi-droplet-fill text-warning" style="font-size:2.25rem;"></i>
+            <i class="bi bi-droplet-fill" style="color:var(--rs-gold);font-size:2.25rem;"></i>
         </div>
         <h1 class="h3 text-white mt-3 fw-bold" style="letter-spacing:-.02em;">SAUR</h1>
         <p class="text-white-50 small" style="letter-spacing:.02em;">Sistema de Avaliacao de Urgencia Renal</p>
@@ -14,7 +14,7 @@
     <div class="card shadow-lg animate-fade-in-d1" style="border:none;border-radius:16px;backdrop-filter:blur(8px);background:rgba(255,255,255,.95);">
         <div class="card-body p-4">
             <div th:if="${param.bloqueado}" class="alert alert-warning py-2 border-0 rounded-3 d-flex align-items-center gap-2 mb-3">
-                <i class="bi bi-shield-lock-fill"></i> Conta temporariamente bloqueada por excesso de tentativas. Tente novamente em alguns minutos.
+                <i class="bi bi-shield-lock-fill text-warning"></i> Conta temporariamente bloqueada por excesso de tentativas. Tente novamente em alguns minutos.
             </div>
             <div th:if="${param.error}" class="alert alert-danger py-2 border-0 rounded-3 d-flex align-items-center gap-2 mb-3">
                 <i class="bi bi-exclamation-triangle-fill"></i> Usuario ou senha invalidos.
@@ -44,8 +44,7 @@
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-pill"
-                        style="background:linear-gradient(135deg,#1a4d8f,#0f3163);border:none;">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-pill shadow-sm">
                     <i class="bi bi-box-arrow-in-right me-2"></i> Entrar
                 </button>
                 <div class="text-center mt-3">

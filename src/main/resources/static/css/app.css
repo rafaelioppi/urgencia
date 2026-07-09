@@ -644,6 +644,65 @@ tr.linha-inativa > td:first-child {
     white-space: nowrap;
 }
 
+/* === Variantes de stat-card para o Painel ===
+   Usam as --rs-* colors em vez de classes Tailwind. Cada variante define as
+   cores de fundo, borda, texto e icone via CSS properties herdadas. */
+.stat-card {
+    --stat-bg: #fff;
+    --stat-border: var(--rs-gray-200);
+    --stat-text: var(--rs-gray-800);
+    --stat-icon-bg: var(--rs-gray-100);
+    --stat-icon-color: var(--rs-gray-500);
+}
+.stat-card-total     { --stat-bg: #fff; --stat-border: var(--rs-gray-200); --stat-text: var(--rs-gray-800); --stat-icon-bg: var(--rs-gray-100); --stat-icon-color: var(--rs-gray-500); }
+.stat-card-andamento { --stat-bg: #fef3e2; --stat-border: var(--rs-gold); --stat-text: var(--rs-gold-dark); --stat-icon-bg: #fef3e2; --stat-icon-color: var(--rs-gold); }
+.stat-card-deferido  { --stat-bg: #e8f5ed; --stat-border: var(--rs-green); --stat-text: var(--rs-green-dark); --stat-icon-bg: #e8f5ed; --stat-icon-color: var(--rs-green); }
+.stat-card-indeferido{ --stat-bg: #fce8e8; --stat-border: var(--rs-red); --stat-text: var(--rs-red-dark); --stat-icon-bg: #fce8e8; --stat-icon-color: var(--rs-red); }
+.stat-card-cancelado { --stat-bg: #fff; --stat-border: var(--rs-gray-300); --stat-text: var(--rs-gray-500); --stat-icon-bg: var(--rs-gray-100); --stat-icon-color: var(--rs-gray-500); }
+.stat-card-membros   { --stat-bg: #e3edf7; --stat-border: var(--rs-blue); --stat-text: var(--rs-blue); --stat-icon-bg: #e3edf7; --stat-icon-color: var(--rs-blue); }
+.stat-card-tempo     { --stat-bg: #fff; --stat-border: var(--rs-gray-200); --stat-text: var(--rs-gray-800); --stat-icon-bg: var(--rs-gray-100); --stat-icon-color: var(--rs-gray-500); }
+
+/* === Toast de notificacao (feedback nao-intrusivo) === */
+.toast-container-sgpur {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    pointer-events: none;
+}
+.toast-sgpur {
+    pointer-events: auto;
+    min-width: 280px;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--rs-shadow-lg);
+    border-left: 4px solid var(--rs-gray-400);
+    padding: .875rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    animation: toastIn .3s ease both;
+    font-size: .875rem;
+}
+.toast-sgpur.toast-success { border-left-color: var(--rs-green); }
+.toast-sgpur.toast-error   { border-left-color: var(--rs-red); }
+.toast-sgpur.toast-info    { border-left-color: var(--rs-blue); }
+.toast-sgpur .toast-icon   { font-size: 1.2rem; line-height: 1; flex-shrink: 0; }
+.toast-sgpur .toast-body   { flex: 1; min-width: 0; }
+.toast-sgpur .toast-close  {
+    background: none; border: none; font-size: 1rem; line-height: 1;
+    cursor: pointer; color: var(--rs-gray-400); padding: 0; flex-shrink: 0;
+}
+.toast-sgpur .toast-close:hover { color: var(--rs-gray-700); }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
 /* === Scrollbar personalizada === */
 /* Firefox */
 * { scrollbar-width: thin; scrollbar-color: var(--rs-gray-300) var(--rs-gray-100); }
@@ -655,10 +714,40 @@ tr.linha-inativa > td:first-child {
 
 /* === Responsivo: wizard vira scroll horizontal em mobile === */
 @media (max-width: 768px) {
-    .wizard { overflow-x: auto; padding-bottom: 1rem; gap: .5rem; }
-    .wizard-step { min-width: 80px; }
+    .wizard {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 1rem;
+        padding-top: 1rem;
+        gap: 0;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+    }
+    .wizard-step {
+        min-width: 85px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        padding: 0 .25rem;
+    }
     .wizard::before { display: none; }
-    .wizard-step .wizard-label { font-size: .65rem; }
+    .wizard-step .wizard-circle { width: 36px; height: 36px; font-size: .75rem; }
+    .wizard-step .wizard-label { font-size: .6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; }
+    /* Sombra sutil indicando que ha mais passos para scroll */
+    .wizard-wrapper { position: relative; }
+    .wizard-wrapper::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 24px;
+        background: linear-gradient(to left, rgba(255,255,255,.8), transparent);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .3s;
+    }
+    .wizard-wrapper.can-scroll::after { opacity: 1; }
 
     /* Em telas estreitas, deixa as colunas Data/Origem/Resposta quebrarem
        para reduzir a largura minima da tabela de pareceres */
