@@ -111,12 +111,24 @@ public class SolicitacaoAvaliadorService {
     }
 
     /**
+     * Altura (pt) reservada no topo de cada pagina para o carimbo de 2 linhas.
+     * Menor que {@link PdfCabecalhoStamper#ALTURA_CABECALHO} (que tambem reserva
+     * espaco para logo e numeracao de pagina) - aqui e so texto pequeno (8pt).
+     */
+    private static final float ALTURA_CARIMBO = 30f;
+
+    /**
      * Carimba um cabecalho de duas linhas no TOPO de CADA pagina de um PDF ja
-     * existente, SEM alterar o conteudo original das paginas (escreve por cima,
-     * na margem superior). Linha 1: identificacao institucional. Linha 2: numero
-     * do processo + INICIAIS do paciente (NUNCA o nome completo, para preservar
-     * a imparcialidade do julgamento dos avaliadores). Usa PdfStamper sobre o
-     * over-content de cada pagina.
+     * existente. Linha 1: identificacao institucional. Linha 2: numero do
+     * processo + INICIAIS do paciente (NUNCA o nome completo, para preservar a
+     * imparcialidade do julgamento dos avaliadores).
+     *
+     * <p>Em vez de desenhar por cima do conteudo original (o que podia deixar
+     * o carimbo sobreposto/ilegivel em documentos clinicos escaneados sem
+     * margem superior), EXPANDE a pagina no topo - mesma tecnica ja usada por
+     * {@link PdfCabecalhoStamper#estampar} via
+     * {@link PdfCabecalhoStamper#expandirTopo} - deslocando o conteudo
+     * original para baixo antes de escrever o carimbo no over-content.
      */
     public byte[] carimbarCabecalho(byte[] pdf, Processo p) {
         if (pdf == null || pdf.length == 0) {
@@ -142,9 +154,11 @@ public class SolicitacaoAvaliadorService {
             PdfStamper stamper = new PdfStamper(reader, out);
             BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
             for (int i = 1; i <= paginas; i++) {
-                Rectangle tamanho = reader.getPageSizeWithRotation(i);
-                float xCentro = (tamanho.getLeft() + tamanho.getRight()) / 2f;
-                float topo = tamanho.getTop();
+                Rectangle pageSize = reader.getPageSize(i);
+                float xCentro = pageSize.getWidth() / 2f;
+                // Expande o MediaBox/CropBox no topo (conteudo original desce
+                // junto) em vez de escrever por cima dele.
+                float topo = PdfCabecalhoStamper.expandirTopo(reader, i, ALTURA_CARIMBO);
                 PdfContentByte over = stamper.getOverContent(i);
                 over.saveState();
                 over.setColorFill(CINZA);

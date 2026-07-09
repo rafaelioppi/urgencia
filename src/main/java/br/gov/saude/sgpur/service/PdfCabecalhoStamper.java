@@ -46,9 +46,37 @@ final class PdfCabecalhoStamper {
     private static final float MARGEM_DIR = 40;
     private static final float LOGO_TAMANHO = 33;
     private static final float LOGO_MARGEM = 36;
-    private static final float ALTURA_CABECALHO = 55;
+
+    /** Altura (pt) reservada no topo para o cabecalho completo (logo + 2 linhas + numeracao). */
+    static final float ALTURA_CABECALHO = 55;
 
     private PdfCabecalhoStamper() {
+    }
+
+    /**
+     * Expande o MediaBox/CropBox de UMA pagina de {@code reader} em
+     * {@code alturaExtra} pontos no TOPO, deslocando o conteudo original para
+     * baixo (em vez de desenhar por cima dele). Retorna a nova coordenada Y do
+     * topo da pagina, para quem for desenhar no over-content saber onde
+     * posicionar o cabecalho.
+     *
+     * <p>Compartilhado por quem precisa carimbar um cabecalho sem arriscar
+     * cobrir o conteudo original de paginas com pouca ou nenhuma margem
+     * superior (ex.: documentos clinicos escaneados) - usado tanto por
+     * {@link #estampar} quanto por
+     * {@link SolicitacaoAvaliadorService#carimbarCabecalho}.
+     */
+    static float expandirTopo(PdfReader reader, int pagina, float alturaExtra) {
+        Rectangle pageSize = reader.getPageSize(pagina);
+        float largura = pageSize.getWidth();
+        float novaAltura = pageSize.getHeight() + alturaExtra;
+
+        PdfDictionary pageDict = reader.getPageN(pagina);
+        PdfRectangle novoMediaBox = new PdfRectangle(0, 0, largura, novaAltura);
+        pageDict.put(PdfName.MEDIABOX, novoMediaBox);
+        pageDict.put(PdfName.CROPBOX, novoMediaBox);
+
+        return novaAltura;
     }
 
     /**
@@ -80,14 +108,7 @@ final class PdfCabecalhoStamper {
             for (int i = 1; i <= totalPaginas; i++) {
                 Rectangle pageSize = reader.getPageSize(i);
                 float largura = pageSize.getWidth();
-                float novaAltura = pageSize.getHeight() + ALTURA_CABECALHO;
-
-                PdfDictionary pageDict = reader.getPageN(i);
-                PdfRectangle novoMediaBox = new PdfRectangle(0, 0, largura, novaAltura);
-                pageDict.put(PdfName.MEDIABOX, novoMediaBox);
-                pageDict.put(PdfName.CROPBOX, novoMediaBox);
-
-                float topo = novaAltura;
+                float topo = expandirTopo(reader, i, ALTURA_CABECALHO);
                 float largUtil = largura - MARGEM_ESQ - MARGEM_DIR;
 
                 PdfContentByte over = stamper.getOverContent(i);

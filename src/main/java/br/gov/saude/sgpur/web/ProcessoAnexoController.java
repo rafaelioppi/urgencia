@@ -57,6 +57,18 @@ public class ProcessoAnexoController {
         this.geminiService = geminiService;
     }
 
+    /**
+     * Substitui um anexo de um tipo especifico: remove o(s) existente(s) e
+     * salva o novo arquivo. Operacao atomica: se o novo anexo falhar por
+     * validacao de tipo, o antigo ja foi removido (consistencia de que o
+     * estado final e "so o novo" ou "nenhum" - nunca dois do mesmo tipo).
+     */
+    private void substituirAnexo(Processo p, TipoAnexo tipo, MultipartFile arquivo)
+            throws IOException {
+        anexoStorage.removerPorTipo(p.getId(), tipo);
+        anexoStorage.salvar(p, tipo, tipo.getDescricao(), arquivo);
+    }
+
     /** Atualiza as datas do oficio de indeferimento (aba Finalizacao). */
     @PostMapping("/{id}/finalizacao")
     public String finalizacao(@PathVariable Long id,
@@ -110,9 +122,7 @@ public class ProcessoAnexoController {
             return "redirect:/processos/" + id + "#finalizacao";
         }
         try {
-            anexoStorage.removerPorTipo(id, TipoAnexo.OFICIO_INDEFERIMENTO);
-            anexoStorage.salvar(p, TipoAnexo.OFICIO_INDEFERIMENTO,
-                "Oficio de indeferimento", arquivo);
+            substituirAnexo(p, TipoAnexo.OFICIO_INDEFERIMENTO, arquivo);
             auditoria.registrar("ANEXO_ADICIONADO",
                 "Processo " + p.getNumero() + " - " + TipoAnexo.OFICIO_INDEFERIMENTO.getDescricao());
             ra.addFlashAttribute("msg", "Oficio de indeferimento anexado.");

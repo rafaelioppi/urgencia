@@ -125,6 +125,43 @@ ssh ubuntu@<IP> 'sudo mv /tmp/sgpur.jar /opt/sgpur/sgpur.jar && sudo chown sgpur
   banco ao recriar a VM.
 - O `sgpur.env` contém segredos: está no `.gitignore` e tem permissão `600`.
 
+## Backup dos anexos (cron)
+
+Os anexos (documentos clínicos, ofícios, comprovantes SNT) só existem no disco
+da VM — perder o disco é perder esses arquivos, mesmo com o banco intacto no
+Neon. Use `deploy/backup-anexos.sh` para copiá-los periodicamente:
+
+```bash
+sudo cp /caminho/backup-anexos.sh /opt/sgpur/backup-anexos.sh
+sudo chown sgpur:sgpur /opt/sgpur/backup-anexos.sh
+sudo chmod 700 /opt/sgpur/backup-anexos.sh
+```
+
+Teste manualmente antes de agendar (local, ex. outro disco/ponto de montagem
+ou volume de object storage montado na VM):
+```bash
+sudo -u sgpur BACKUP_DEST=/mnt/backup/sgpur /opt/sgpur/backup-anexos.sh
+```
+Ou para um destino remoto via SSH (rsync incremental, sem tar):
+```bash
+sudo -u sgpur BACKUP_DEST=usuario@host:/backup/sgpur /opt/sgpur/backup-anexos.sh
+```
+
+Agende via `crontab -u sgpur -e` (backup diário às 3h, log em `backup.log`):
+```
+0 3 * * * BACKUP_DEST=/mnt/backup/sgpur /opt/sgpur/backup-anexos.sh >> /opt/sgpur/backup.log 2>&1
+```
+
+Ajuste `BACKUP_DEST` (obrigatório) e opcionalmente `ANEXOS_DIR` e
+`RETENCAO_DIAS` (dias de retenção de backups locais em `.tar.gz`; default 14).
+Ver comentários no topo do script para detalhes.
+
+> **Lembrete (ação manual do usuário, fora do escopo deste script):**
+> confirme no **console do Neon** se o projeto/plano usado tem **backup
+> automático / PITR (point-in-time recovery)** habilitado para o banco. Este
+> script cobre só os anexos em disco — o banco propriamente dito depende da
+> política de backup contratada no Neon.
+
 ## Se a rede bloquear SSH (proxy corporativo)
 
 Se `ssh ubuntu@<IP>` falhar de uma rede corporativa (proxy bloqueando a

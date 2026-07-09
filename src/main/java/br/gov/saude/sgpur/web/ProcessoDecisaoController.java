@@ -256,6 +256,7 @@ public class ProcessoDecisaoController {
         // completo) NUNCA entra aqui. Sem nenhum documento clinico PDF nao ha o
         // que enviar: bloqueia o envio.
         java.util.List<byte[]> partes = new java.util.ArrayList<>();
+        java.util.List<String> partesNomes = new java.util.ArrayList<>();
         java.util.List<String> ignorados = new java.util.ArrayList<>();
         try {
             for (Anexo doc : p.getAnexos()) {
@@ -269,6 +270,7 @@ public class ProcessoDecisaoController {
                     continue;
                 }
                 partes.add(java.nio.file.Files.readAllBytes(anexoStorage.resolverArquivo(doc)));
+                partesNomes.add(doc.getNomeArquivo());
             }
         } catch (IOException e) {
             ra.addFlashAttribute("erro", "Falha ao ler os documentos clinicos: " + e.getMessage());
@@ -284,17 +286,25 @@ public class ProcessoDecisaoController {
             return "redirect:/processos/" + id + "#envio";
         }
 
-        // Valida se os PDFs tem paginas antes de consolidar
+        // Valida se os PDFs tem paginas antes de consolidar. Um PDF corrompido
+        // ou protegido por senha e descartado da consolidacao, mas o nome vai
+        // para "ignorados" (mesmo aviso dos anexos nao-PDF) - o operador precisa
+        // saber que um documento clinico ficou de fora, em vez de o envio
+        // seguir silenciosamente incompleto.
         java.util.List<byte[]> validos = new java.util.ArrayList<>();
-        for (byte[] bytes : partes) {
+        for (int i = 0; i < partes.size(); i++) {
+            byte[] bytes = partes.get(i);
+            String nome = partesNomes.get(i);
             try {
                 com.lowagie.text.pdf.PdfReader chk = new com.lowagie.text.pdf.PdfReader(bytes);
                 if (chk.getNumberOfPages() > 0) {
                     validos.add(bytes);
+                } else {
+                    ignorados.add(nome + " (PDF sem paginas)");
                 }
                 chk.close();
             } catch (Exception e) {
-                // PDF corrompido — ignora silenciosamente
+                ignorados.add(nome + " (PDF corrompido ou protegido por senha)");
             }
         }
         if (validos.isEmpty()) {
@@ -305,16 +315,19 @@ public class ProcessoDecisaoController {
         }
         partes = validos;
 
-        // PRIMEIRO: gera o PDF consolidado com cabecalho carimbado.
-        // Se falhar, o envio NAO e efetivado (evita processo em ENVIADO sem
-        // o PDF dos avaliadores — "The document has no pages").
+        // PRIMEIRO: gera o PDF consolidado com cabecalho carimbado, em memoria.
+        // SO DEPOIS de a geracao ter sucesso e que o anexo antigo (se houver)
+        // e removido e o novo e salvo - assim, se consolidar/carimbar falhar no
+        // meio, o processo NAO fica sem nenhum PDF de solicitacao aos
+        // avaliadores (evita perder um anexo bom por causa de uma tentativa
+        // de reenvio que falhou).
         try {
-            anexoStorage.removerPorTipo(id, TipoAnexo.SOLICITACAO_AVALIADOR);
             byte[] consolidado = solicitacaoAvaliadorService.consolidar(partes);
             byte[] pdfSolicitacao = solicitacaoAvaliadorService.carimbarCabecalho(consolidado, p);
             String nomeSolicitacao = SolicitacaoAvaliadorService.nomeArquivoOficial(p);
 
             // SO depois de gerar o PDF com sucesso, efetiva o envio.
+            anexoStorage.removerPorTipo(id, TipoAnexo.SOLICITACAO_AVALIADOR);
             p.getPareceres().forEach(par -> par.setDataEnvio(hoje));
             processoService.salvar(p);
             processoService.registrarEnvio(id);
@@ -327,16 +340,15 @@ public class ProcessoDecisaoController {
 
             if (!ignorados.isEmpty()) {
                 ra.addFlashAttribute("aviso",
-                    "Estes documentos clinicos nao sao PDF e ficaram de fora do PDF consolidado: "
+                    "Estes documentos clinicos ficaram de fora do PDF consolidado: "
                         + String.join(", ", ignorados) + ".");
             }
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(ProcessoDecisaoController.class)
                 .error("Erro ao registrar envio do processo {}", id, e);
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
             ra.addFlashAttribute("erro",
-                "Falha ao gerar o PDF da solicitacao: " + cause.getMessage()
-                + " Verifique se os documentos clinicos anexados sao PDFs validos e nao estao vazios.");
+                "Nao foi possivel gerar o PDF de envio. Verifique os documentos clinicos "
+                + "anexados (devem ser PDFs validos, nao corrompidos e sem senha) e tente novamente.");
             return "redirect:/processos/" + id + "#envio";
         }
 

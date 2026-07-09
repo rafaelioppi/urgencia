@@ -25,6 +25,15 @@ spring:
 
   thymeleaf:
     cache: false
+
+  # Desliga o Open Session In View: o padrao do Spring Boot (true) mantem a
+  # sessao Hibernate aberta ate a renderizacao da view, escondendo N+1 queries
+  # e prendendo a conexao JDBC por mais tempo do que o necessario. Com false,
+  # qualquer colecao lazy acessada so na view (Thymeleaf) estoura
+  # LazyInitializationException - forcando os servicos a buscar os dados
+  # explicitamente (fetch join / Hibernate.initialize), o que e o correto.
+  jpa:
+    open-in-view: false
   web:
     resources:
       chain:
@@ -63,7 +72,7 @@ app:
     password: ${SGPUR_ADMIN_PASSWORD:admin123}
   # URL base da aplicacao, usada nos links do Portal do Avaliador nos e-mails.
   # Sobrescreva em producao com a URL publica real (ex.: https://saur.saude.rs.gov.br).
-  base-url: ${SGPUR_BASE_URL:http://localhost:3000}
+  base-url: ${SGPUR_BASE_URL:http://localhost:8080}
 
   # SEGURANCA DE TESTES: em dev, TODO e-mail enviado (independente do
   # destinatario real calculado pelo sistema) vai para este endereco -

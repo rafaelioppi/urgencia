@@ -355,6 +355,60 @@ class ProcessoControllerEmailTest {
         verifyNoInteractions(emailSenderService);
     }
 
+    // ===== Bloqueio de registrar-envio sem documento clinico PDF =====
+
+    /**
+     * Regra de negocio: sem nenhum documento clinico (PDF) anexado nao ha o que
+     * consolidar no PDF enviado aos avaliadores - o registro do envio deve ser
+     * bloqueado (flash de erro, sem efetivar). Confere tambem que nenhum efeito
+     * colateral ocorre: nem o envio e registrado (pareceres/status), nem o PDF
+     * SOLICITACAO_AVALIADOR e gerado/persistido.
+     */
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    void registrarEnvioBloqueadoSemNenhumDocumentoClinico() throws Exception {
+        Anexo comprovanteEnvio = new Anexo();
+        comprovanteEnvio.setTipo(TipoAnexo.EMAIL_ENVIADO_AVALIADORES);
+        processo.getAnexos().add(comprovanteEnvio);
+
+        mvc.perform(post("/processos/1/registrar-envio").with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(flash().attributeExists("erro"));
+
+        verify(processoService, never()).registrarEnvio(anyLong());
+        verify(anexoStorage, never()).salvarBytes(any(), eq(TipoAnexo.SOLICITACAO_AVALIADOR),
+            anyString(), anyString(), anyString(), any(byte[].class));
+        verifyNoInteractions(solicitacaoAvaliadorService);
+    }
+
+    /**
+     * Mesma regra, mas com um documento clinico anexado que NAO e PDF (ex.:
+     * imagem/Word) - tambem deve bloquear, pois nao ha PDF valido para
+     * consolidar. Nenhum efeito colateral deve ocorrer.
+     */
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    void registrarEnvioBloqueadoQuandoDocumentoClinicoNaoEhPdf() throws Exception {
+        Anexo comprovanteEnvio = new Anexo();
+        comprovanteEnvio.setTipo(TipoAnexo.EMAIL_ENVIADO_AVALIADORES);
+        processo.getAnexos().add(comprovanteEnvio);
+
+        Anexo docNaoPdf = new Anexo();
+        docNaoPdf.setTipo(TipoAnexo.DOCUMENTO_CLINICO_AVALIADOR);
+        docNaoPdf.setNomeArquivo("exame.jpg");
+        docNaoPdf.setContentType("image/jpeg");
+        processo.getAnexos().add(docNaoPdf);
+
+        mvc.perform(post("/processos/1/registrar-envio").with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(flash().attributeExists("erro"));
+
+        verify(processoService, never()).registrarEnvio(anyLong());
+        verify(anexoStorage, never()).salvarBytes(any(), eq(TipoAnexo.SOLICITACAO_AVALIADOR),
+            anyString(), anyString(), anyString(), any(byte[].class));
+        verifyNoInteractions(solicitacaoAvaliadorService);
+    }
+
     // ===== Bug: anexar resposta sem selecionar o parecer (resposta-avaliador) =====
 
     /**
