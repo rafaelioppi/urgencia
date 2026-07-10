@@ -303,6 +303,16 @@ autenticado do próprio médico no sistema.
   logo após o deploy** (não há Flyway/Liquibase neste projeto — é
   responsabilidade manual).
 
+## Próxima sessão: estudo de UI comportamental pendente
+`docs/ESTUDO-UI-COMPORTAMENTAL.md` (2026-07-10) reúne princípios de leitura
+visual (padrão F/Z, atributos pré-atentivos, Lei de Hick/Fitts, Gestalt,
+Von Restorff, posição serial) mapeados a pontos concretos do SAUR a
+investigar (ex.: ordem de colunas em `/processos`, se a coluna "O que falta"
+está fora da zona de maior atenção do padrão F; se os badges de
+`StatusProcesso` diferenciam por ícone além de cor, para daltonismo; se
+timeline vertical + wizard horizontal simultâneos sobrecarregam decisão).
+Ler esse arquivo antes de qualquer novo pedido de ajuste visual do usuário.
+
 ## Deploy
 Artefatos em `deploy/` (systemd, nginx, env de exemplo, guia). Host alvo:
 **Oracle Always Free (São Paulo)** — ver `deploy/README-deploy.md`.
