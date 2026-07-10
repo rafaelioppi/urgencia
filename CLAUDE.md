@@ -24,6 +24,19 @@ não renomeados no rebrand SAUR). `artifactId` do Maven é `saur` (gera
   vazia; em prod exige `SGPUR_ADMIN_PASSWORD` via env var, sem default).
 - Testes: `.\test.ps1` (ou `mvn test`) — **144 testes**, sempre com **JDK 21**.
   Build: `mvn -DskipTests package` (gera o JAR).
+- **Teste E2E de navegador (Playwright):** `.\e2e.ps1` sobe o SAUR real (porta
+  aleatória, H2, perfil dev) e um Chromium de verdade percorre TODO o fluxo
+  clicando na tela — login → cadastro → Recebimento → Envio → 3 pareceres →
+  Decisão (maioria simples) → Finalização — como um operador humano faria.
+  Fica em `src/test/java/br/gov/saude/sgpur/e2e/` (Page Object Model:
+  `PlaywrightTestBase` + `pages/*Page.java` + `*IT.java`), separado dos 144
+  testes rápidos via `maven-failsafe-plugin`/profile `e2e` (não roda em
+  `.\test.ps1`/`mvn test`). Primeira vez só, instala o browser:
+  `.\e2e.ps1 -InstalarBrowser`. Rodar com o browser visível (útil para
+  depurar): `.\e2e.ps1 -Headed`. Screenshot automático em
+  `target/e2e-screenshots/` se o teste falhar. (Equivalente cru, sem o
+  script: `mvn verify -Pe2e`, mas exige JDK 21 e Maven já no PATH da sessão —
+  prefira `.\e2e.ps1`, que configura isso sozinho como o `test.ps1`.)
 - **Deploy em produção:** VM Oracle Cloud (`ubuntu@163.176.163.213`, domínio
   `urgenciarenal.duckdns.org`), systemd `sgpur.service`, jar em
   `/opt/sgpur/sgpur.jar` (usuário `sgpur`). Chave SSH local:

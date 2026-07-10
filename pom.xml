@@ -112,6 +112,16 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- E2E de navegador (bot clicando na UI real) - testes *IT, rodam
+             separado via failsafe (mvn verify -Pe2e), nunca no mvn test
+             normal (144 testes rapidos). Ver docs/E2E-PLAYWRIGHT.md. -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.61.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -120,6 +130,32 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- mvn test / .\test.ps1 continuam rodando so *Test.java (surefire padrao),
+                 sem tocar nos testes E2E (*IT.java), que sao lentos e exigem browser. -->
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Ativado com "mvn verify -Pe2e": roda os testes *IT.java (Playwright)
+             via failsafe, separados da suite rapida do dia a dia. -->
+        <profile>
+            <id>e2e</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
