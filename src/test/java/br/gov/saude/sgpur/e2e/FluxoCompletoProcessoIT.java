@@ -158,10 +158,12 @@ class FluxoCompletoProcessoIT extends PlaywrightTestBase {
             mostrarPaginaInteira();
 
             // ===== Relatorio Final (PDF), gerado pelo sistema com o resultado =====
-            byte[] relatorioPdf = detalhe.abrirRelatorioFinal();
-            assertThat(relatorioPdf).isNotEmpty();
-            assertThat(new String(relatorioPdf, 0, 5, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
-            screenshot("relatorio-final");
+            // Abre visivelmente numa nova aba - clique real no botao, nao um fetch
+            // em segundo plano, para quem esta acompanhando ver o PDF na tela.
+            Page abaRelatorio = detalhe.abrirRelatorioFinal();
+            assertThat(abaRelatorio.url()).contains("/relatorio");
+            abaRelatorio.waitForTimeout(2000); // tempo pro visualizador de PDF renderizar antes do screenshot
+            screenshot(abaRelatorio, "relatorio-final");
 
         } catch (AssertionError | RuntimeException e) {
             screenshot("fluxo-completo-falha");

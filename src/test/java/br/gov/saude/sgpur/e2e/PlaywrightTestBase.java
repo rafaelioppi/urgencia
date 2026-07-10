@@ -122,8 +122,13 @@ public abstract class PlaywrightTestBase {
      * teste e o que importa, nao um erro secundario ao tentar capturar.
      */
     protected void screenshot(String nome) {
+        screenshot(page, nome);
+    }
+
+    /** Variante de {@link #screenshot(String)} para capturar uma Page especifica (ex.: uma aba nova). */
+    protected void screenshot(Page alvo, String nome) {
         try {
-            page.screenshot(new Page.ScreenshotOptions()
+            alvo.screenshot(new Page.ScreenshotOptions()
                 .setPath(SCREENSHOT_DIR.resolve(nome + ".png"))
                 .setFullPage(true));
         } catch (RuntimeException e) {

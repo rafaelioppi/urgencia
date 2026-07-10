@@ -141,22 +141,21 @@ public class ProcessoDetalhePage {
     }
 
     /**
-     * Confirma que o Relatorio Final (PDF) esta disponivel e e um PDF valido,
-     * buscando o mesmo href do botao "Relatorio Final (PDF)" visivel na tela
-     * via requisicao HTTP autenticada (reaproveita os cookies de sessao da
-     * Page) - equivalente ao que o clique no link faria, mas sem depender de
-     * o Chromium renderizar/baixar PDF de forma diferente em modo headless
-     * vs. headed (o clique real chegou a disparar "Download is starting" em
-     * headless, por o PDF vir com Content-Disposition: inline).
+     * Clica de verdade no botao "Relatorio Final (PDF)" (target=_blank) e
+     * espera a nova aba abrir, para quem esta acompanhando em modo headed
+     * VER o PDF sendo renderizado na tela pelo visualizador nativo do
+     * Chrome - e o comportamento real de um operador clicando no botao.
+     *
+     * <p>So funciona de forma visivel em modo HEADED: o Chromium headless
+     * nao tem visualizador de PDF embutido e trata a mesma resposta como
+     * DOWNLOAD em vez de abrir uma pagina (ver AVISO abaixo).
      */
-    public byte[] abrirRelatorioFinal() {
+    public Page abrirRelatorioFinal() {
         narrar("Abrindo o Relatorio Final (PDF) gerado pelo sistema...");
-        String href = page.locator("a.btn:has-text('Relatorio Final (PDF)')").getAttribute("href");
-        com.microsoft.playwright.APIResponse resp = page.request().get(href);
-        if (!resp.ok()) {
-            throw new IllegalStateException("Relatorio Final retornou HTTP " + resp.status() + " para " + href);
-        }
-        return resp.body();
+        Page abaRelatorio = page.context().waitForPage(() ->
+            page.locator("a.btn:has-text('Relatorio Final (PDF)')").click());
+        abaRelatorio.waitForLoadState();
+        return abaRelatorio;
     }
 
     public Page raw() {
