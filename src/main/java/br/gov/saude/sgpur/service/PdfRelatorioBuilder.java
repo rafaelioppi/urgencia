@@ -205,8 +205,18 @@ class PdfRelatorioBuilder {
             adicionarLinhaCapa(tDados, "Data da situacao especial:", dataSit, fRotulo, fValor);
         }
 
-        String dataDecisaoStr = p.getDataDecisao() != null
-            ? p.getDataDecisao().format(DATA) : "-";
+        // Fallback: processo ja finalizado sem dataDecisao (dado legado/
+        // importado, pois decidir() sempre seta a data) mostra a data de
+        // hoje como aproximacao em vez de "-", que confundiria num
+        // relatorio de processo claramente encerrado.
+        String dataDecisaoStr;
+        if (p.getDataDecisao() != null) {
+            dataDecisaoStr = p.getDataDecisao().format(DATA);
+        } else if (p.getStatus().isFinalizado()) {
+            dataDecisaoStr = java.time.LocalDate.now().format(DATA);
+        } else {
+            dataDecisaoStr = "-";
+        }
         adicionarLinhaCapa(tDados, "Data da decisao:", dataDecisaoStr, fRotulo, fValor);
 
         if (p.getStatus().isFinalizado()) {
