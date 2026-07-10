@@ -22,13 +22,14 @@ import java.nio.file.Paths;
  * porta aleatoria (H2 em memoria, perfil dev) e abre um browser Chromium
  * de verdade para simular um operador humano clicando na tela.
  *
- * <p>Roda so via "mvn verify -Pe2e" (maven-failsafe-plugin, classes *IT.java)
- * - nunca no "mvn test"/.\test.ps1 do dia a dia, que continua rapido e sem
- * dependencia de browser instalado. Ver docs/E2E-PLAYWRIGHT.md.
+ * <p>Roda so via ".\e2e.ps1" / "mvn verify -Pe2e" (maven-failsafe-plugin,
+ * classes *IT.java) - nunca no "mvn test"/.\test.ps1 do dia a dia, que
+ * continua rapido e sem dependencia de browser instalado.
  *
- * <p>Modo visual: defina a env var SAUR_E2E_HEADED=true para ver o browser
- * abrindo de verdade (util ao depurar um teste localmente). Por padrao roda
- * headless (sem janela), como convem em CI.
+ * <p>Por padrao a janela do browser fica VISIVEL, com slowMo de 900ms entre
+ * acoes (dá pra acompanhar o "bot" navegando). Para rodar sem janela (mais
+ * rapido, ex. CI): ".\e2e.ps1 -Headless" (equivale a
+ * "-Dsaur.e2e.headed=false").
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev")
@@ -47,10 +48,15 @@ public abstract class PlaywrightTestBase {
     @BeforeAll
     static void launchBrowser() {
         playwright = Playwright.create();
-        boolean headed = Boolean.parseBoolean(System.getenv().getOrDefault("SAUR_E2E_HEADED", "false"));
+        // Aceita tanto a system property (-Dsaur.e2e.headed=true, a forma
+        // confiavel via Maven/Failsafe, que forka um processo separado e nem
+        // sempre herda env vars do shell pai) quanto a env var SAUR_E2E_HEADED
+        // (util fora do Maven, ex. rodando a classe direto na IDE).
+        boolean headed = Boolean.parseBoolean(System.getProperty("saur.e2e.headed",
+            System.getenv().getOrDefault("SAUR_E2E_HEADED", "true")));
         browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
             .setHeadless(!headed)
-            .setSlowMo(headed ? 250 : 0));
+            .setSlowMo(headed ? 900 : 0));
     }
 
     @AfterAll
@@ -86,8 +92,14 @@ public abstract class PlaywrightTestBase {
 
     protected void login(String username, String senha) {
         page.navigate("/login");
+        legenda("Fazendo login como " + username + "...");
         page.locator("input[name=username]").fill(username);
         page.locator("input[name=password]").fill(senha);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Entrar")).click();
+    }
+
+    /** Legenda fixa no topo da pagina anunciando a proxima acao do bot (ver {@link Legenda}). */
+    protected void legenda(String texto) {
+        Legenda.mostrar(page, texto);
     }
 }

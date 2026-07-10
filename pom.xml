@@ -19,6 +19,9 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Teste E2E (Playwright) sempre abre o browser visivel por padrao.
+             Para rodar sem janela (ex.: CI): mvn verify -Pe2e -Dsaur.e2e.headed=false -->
+        <saur.e2e.headed>true</saur.e2e.headed>
     </properties>
 
     <dependencies>
@@ -145,6 +148,14 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <!-- Failsafe forka um processo Java separado para rodar os
+                                 *IT.java; sem isso, "-Dsaur.e2e.headed=true" passado no
+                                 mvn nao chega la e o browser sempre roda headless. -->
+                            <systemPropertyVariables>
+                                <saur.e2e.headed>${saur.e2e.headed}</saur.e2e.headed>
+                            </systemPropertyVariables>
+                        </configuration>
                         <executions>
                             <execution>
                                 <goals>

@@ -1,5 +1,6 @@
 package br.gov.saude.sgpur.e2e.pages;
 
+import br.gov.saude.sgpur.e2e.Legenda;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.FilePayload;
@@ -17,6 +18,10 @@ public class ProcessoDetalhePage {
         this.page = page;
     }
 
+    private void narrar(String texto) {
+        Legenda.mostrar(page, texto);
+    }
+
     private void clicarPasso(String paneId) {
         page.locator(".wizard-step[href='#" + paneId + "']").click();
     }
@@ -24,6 +29,7 @@ public class ProcessoDetalhePage {
     // ===== Passo 1: Recebimento =====
 
     public ProcessoDetalhePage passo1_registrarRecebimento(FilePayload solicitacaoOriginal) {
+        narrar("Passo 1/5 - Recebimento: anexando a solicitacao original recebida...");
         clicarPasso("pane-recebimento");
         page.locator("#pane-recebimento input[name=arquivo]").setInputFiles(solicitacaoOriginal);
         page.locator("#pane-recebimento button:has-text('Registrar recebimento')").click();
@@ -34,6 +40,7 @@ public class ProcessoDetalhePage {
     // ===== Passo 2: Envio =====
 
     public ProcessoDetalhePage passo2_anexarDocumentoClinico(FilePayload documentoClinico) {
+        narrar("Passo 2/5 - Envio: anexando o documento clinico anonimizado...");
         clicarPasso("pane-envio");
         page.locator("#pane-envio form[action*='documento-clinico'] input[name=arquivo]").setInputFiles(documentoClinico);
         page.locator("#pane-envio button:has-text('Anexar documento clinico')").click();
@@ -42,6 +49,7 @@ public class ProcessoDetalhePage {
     }
 
     public ProcessoDetalhePage passo2_anexarComprovanteEnvio(FilePayload comprovante) {
+        narrar("Passo 2/5 - Envio: anexando o comprovante de envio aos avaliadores...");
         clicarPasso("pane-envio");
         page.locator("#pane-envio form[action*='comprovante-envio-avaliadores'] input[name=arquivo]").setInputFiles(comprovante);
         page.locator("#pane-envio form[action*='comprovante-envio-avaliadores'] button").click();
@@ -50,6 +58,7 @@ public class ProcessoDetalhePage {
     }
 
     public ProcessoDetalhePage passo2_registrarEnvio() {
+        narrar("Passo 2/5 - Envio: registrando o envio aos 3 avaliadores...");
         clicarPasso("pane-envio");
         page.locator("#pane-envio button:has-text('Registrar envio')").click();
         page.waitForLoadState();
@@ -60,6 +69,7 @@ public class ProcessoDetalhePage {
 
     /** Registra o parecer do medico identificado pelo nome (texto da linha da tabela). */
     public ProcessoDetalhePage passo3_registrarParecer(String nomeMedico, String resultado, FilePayload respostaAvaliador) {
+        narrar("Passo 3/5 - Respostas: registrando o parecer de " + nomeMedico + " (" + resultado + ")...");
         clicarPasso("pane-respostas");
         Locator linha = page.locator("#respostas tr", new Page.LocatorOptions().setHasText(nomeMedico));
         linha.locator("select[name=resultado]").selectOption(resultado);
@@ -76,6 +86,7 @@ public class ProcessoDetalhePage {
     }
 
     public ProcessoDetalhePage passo4_decidir(String decisao, String motivoIndeferimento) {
+        narrar("Passo 4/5 - Decisao: registrando a decisao final (" + decisao + ")...");
         clicarPasso("pane-decisao");
         page.locator("#decisaoSelect").selectOption(decisao);
         if (motivoIndeferimento != null) {
@@ -89,6 +100,7 @@ public class ProcessoDetalhePage {
     // ===== Passo 5: Finalizacao =====
 
     public ProcessoDetalhePage passo5_anexarComprovanteSnt(FilePayload comprovanteSnt) {
+        narrar("Passo 5/5 - Finalizacao: anexando o comprovante de insercao no SNT...");
         clicarPasso("pane-finalizacao");
         page.locator("#finalizacao form[action*='comprovante-snt'] input[name=arquivo]").setInputFiles(comprovanteSnt);
         page.locator("#finalizacao form[action*='comprovante-snt'] button").click();
@@ -97,6 +109,7 @@ public class ProcessoDetalhePage {
     }
 
     public ProcessoDetalhePage passo5_anexarComprovanteEnvioSolicitante(FilePayload comprovante) {
+        narrar("Passo 5/5 - Finalizacao: anexando o comprovante de envio ao solicitante...");
         clicarPasso("pane-finalizacao");
         page.locator("#finalizacao form[action*='comprovante-envio-solicitante'] input[name=arquivo]").setInputFiles(comprovante);
         page.locator("#finalizacao form[action*='comprovante-envio-solicitante'] button").click();
@@ -105,6 +118,7 @@ public class ProcessoDetalhePage {
     }
 
     public ProcessoDetalhePage passo5_confirmarRespostaAoSolicitante() {
+        narrar("Passo 5/5 - Finalizacao: confirmando o envio da resposta ao solicitante...");
         clicarPasso("pane-finalizacao");
         page.locator("#emailEnvSolicitante").check();
         page.locator("#finalizacao form[action*='resposta-solicitante'] button").click();

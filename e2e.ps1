@@ -1,12 +1,13 @@
 # Roda o teste E2E de navegador (Playwright) do SAUR (Windows / PowerShell),
 # forcando o JDK 21. Sobe o app real (H2, porta aleatoria) e abre um Chromium
-# de verdade que percorre todo o fluxo do processo clicando na tela.
-# Uso:  .\e2e.ps1                 -> roda o(s) teste(s) E2E (headless)
-#       .\e2e.ps1 -Headed         -> roda com o browser visivel (mais lento, p/ depurar)
+# de verdade, VISIVEL por padrao, que percorre todo o fluxo do processo
+# clicando na tela (login, cadastro, wizard completo).
+# Uso:  .\e2e.ps1                  -> roda o(s) teste(s) E2E (browser visivel)
+#       .\e2e.ps1 -Headless        -> roda sem janela (mais rapido, ex.: CI)
 #       .\e2e.ps1 -InstalarBrowser -> so instala o Chromium do Playwright (1a vez)
 
 param(
-    [switch]$Headed,
+    [switch]$Headless,
     [switch]$InstalarBrowser
 )
 
@@ -40,7 +41,6 @@ if ($InstalarBrowser) {
     exit $LASTEXITCODE
 }
 
-if ($Headed) { $env:SAUR_E2E_HEADED = "true" }
-
-Write-Host "==> Rodando teste E2E (Playwright) | JAVA_HOME: $env:JAVA_HOME | Headed: $($Headed.IsPresent)" -ForegroundColor Cyan
-& $mvn verify -Pe2e
+$headed = -not $Headless.IsPresent
+Write-Host "==> Rodando teste E2E (Playwright) | JAVA_HOME: $env:JAVA_HOME | Browser visivel: $headed" -ForegroundColor Cyan
+& $mvn verify -Pe2e "-Dsaur.e2e.headed=$($headed.ToString().ToLower())"
